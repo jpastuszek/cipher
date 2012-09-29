@@ -1,3 +1,4 @@
+puts 'test'
 require 'openssl'
 require 'base64'
 

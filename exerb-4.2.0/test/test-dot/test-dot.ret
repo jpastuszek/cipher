@@ -1,5 +1,0 @@
-["test-dot.rb", []]
-["dot.dot.rb", ["dot.dot.rb"]]
-["test-dot.rb", ["dot.dot.rb"]]
-["dot.dot.dot.rb", ["dot.dot.rb", "dot.dot.dot.rb"]]
-["test-dot.rb", ["dot.dot.rb", "dot.dot.dot.rb"]]
