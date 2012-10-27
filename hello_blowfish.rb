@@ -26,12 +26,12 @@ module CipherSelector
 				when /([^-]+)-([0-9]+)/
 					[$1, $2.to_i, 'none']
 				when /([^-]+)-(.*)/
-					[$1, :any, $2]
+					[$1, :custom, $2]
 				else
-					[c, :any, 'none']
+					[c, :custom, 'none']
 			end
-			puts c
-			puts "c: %s k: %s m: %s" % [cipher, key_length, mode]
+			#puts c
+			#puts "c: %s k: %s m: %s" % [cipher, key_length, mode]
 
 			# some algorithms does not support setting key sizes
 			key_length = :na if ['DES', 'DES3'].include? cipher
@@ -58,13 +58,12 @@ settings = CLI.new do
 		default: 'AES'
 	option :key_length,
 		short: :k,
-		description: 'seleck key size for selected cipher',
-		cast: Integer,
-		default: 256
+		description: 'cipher key length in bits (rounded to multiple of 8)',
+		default: 'longest preset'
 	option :mode,
 		short: :m,
-		description: 'seleck mode for selected cipher and key length',
-		default: 'CBC'
+		description: 'cipher streaming mode',
+		default: 'prefer CBC'
 	option :password,
 		short: :p,
 		description: 'encryption or decryption password'
@@ -90,14 +89,23 @@ end.parse! do |settings|
 		exit
 	end
 
-	p modes = OpenSSL::Cipher[settings.cipher] or fail "unsupported cipher #{settings.cipher}"
+	modes = OpenSSL::Cipher[settings.cipher] or fail "unsupported cipher #{settings.cipher}"
 
 	if settings.list_modes
 		puts modes.keys.join ' '
 		exit
 	end
 
-	key_lenghts =
+	if settings.mode =~ /prefer (.+)/
+		settings.mode =
+		if modes.keys.include? $1
+			$1
+		else
+			'none'
+		end
+	end
+
+	key_lengths =
 	if modes.include? settings.mode
 		modes[settings.mode]
 	else
@@ -105,19 +113,36 @@ end.parse! do |settings|
 	end
 
 	if settings.list_key_lengths
-		puts key_lenghts.keys.join ' '
+		puts key_lengths.keys.join ' '
 		exit
 	end
 
+	settings.key_length =
+	if settings.key_length == 'longest preset'
+		longest = key_lengths.keys.select{|k| k.is_a? Numeric}.sort.last
+		if longest
+			longest
+		else	 
+			if key_lengths.include? :na
+				# cannot use key length with this algorithm
+				nil
+			else
+				128
+			end
+		end
+	else
+		fail "cipher #{settings.cipher} does not support key length option" if key_lengths.include? :na
+		settings.key_length.to_i
+	end
+
 	settings.cipher_name = 
-	if key_lenghts.include? :na
-		# cannot use key length with this algorithm
-		settings.key_length = nil
-		key_lenghts[:na]
-	elsif key_lenghts.include? settings.key_length
-		key_lenghts[settings.key_length]
-	elsif key_lenghts.include? :any
-		key_lenghts[:any]
+	if key_lengths.include? :na
+		key_lengths[:na]
+	elsif key_lengths.include? settings.key_length
+		key_lengths[settings.key_length]
+	elsif key_lengths.include? :custom
+		settings.custom_key_length = true
+		key_lengths[:custom]
 	else
 		fail "unsupported key length #{settings.key_length} for cipher #{settings.cipher}"
 	end
@@ -130,10 +155,10 @@ end
 
 puts "Using cipher: #{settings.cipher_name}"
 cipher = settings.cipher
-p cipher.key_len
-if settings.key_length
+
+if settings.custom_key_length
 	puts "Using key length: #{settings.key_length / 8 * 8}"
-	cipher.key_len = p settings.key_length / 8
+	cipher.key_len = settings.key_length / 8
 end
 
 cipher.encrypt
@@ -152,10 +177,9 @@ puts "Data:"
 puts data.encode64
 
 decipher = OpenSSL::Cipher::Cipher.new(settings.cipher_name)
-p cipher.key_len
-if settings.key_length
+if settings.custom_key_length
 	puts "Using key length: #{settings.key_length / 8 * 8}"
-	decipher.key_len = p settings.key_length / 8
+	decipher.key_len = settings.key_length / 8
 end
 
 decipher.key = key
