@@ -112,7 +112,7 @@ end.parse! do |settings|
 	settings.cipher_name = 
 	if key_lenghts.include? :na
 		# cannot use key length with this algorithm
-		settings.key_lenghts = nil
+		settings.key_length = nil
 		key_lenghts[:na]
 	elsif key_lenghts.include? settings.key_length
 		key_lenghts[settings.key_length]
