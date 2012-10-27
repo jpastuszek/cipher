@@ -3,20 +3,43 @@ require 'base64'
 require 'cli'
 
 module CipherSelector
-	def [](*args)
-		unless @ciphers
-			@ciphers = {}
-			OpenSSL::Cipher.ciphers.sort.uniq.map do |c|
-				cipher, key_length, mode = *c.split('-')
-				((@ciphers[cipher] ||= {})[key_length ? key_length.to_i : nil] ||= {})[mode] = c
-			end
-		end
+	def [](c)
+		cipher_tree[c]
+	end
+	
+	def keys
+		cipher_tree.keys
+	end
 
-		root = @ciphers
-		until args.empty?
-			root = root[args.shift]
+	private
+
+	def cipher_tree
+		return @ciphers if @ciphers
+		@ciphers = {}
+		# use only upcased aliases
+		OpenSSL::Cipher.ciphers.select{|a| a == a.upcase}.sort.uniq.map do |c|
+			# all variants of alias construction
+			cipher, key_length, mode = 
+			case c
+				when /([^-]+)-([0-9]+)-(.*)/
+					[$1, $2.to_i, $3]
+				when /([^-]+)-([0-9]+)/
+					[$1, $2.to_i, 'none']
+				when /([^-]+)-(.*)/
+					[$1, :any, $2]
+				else
+					[c, :any, 'none']
+			end
+			puts c
+			puts "c: %s k: %s m: %s" % [cipher, key_length, mode]
+
+			# some algorithms does not support setting key sizes
+			key_length = :na if ['DES', 'DES3'].include? cipher
+			
+			# build nested hash
+			((@ciphers[cipher] ||= {})[mode] ||= {})[key_length] = c
 		end
-		root.is_a?(Hash) ? root.keys : root
+		@ciphers
 	end
 end
 
@@ -41,7 +64,7 @@ settings = CLI.new do
 	option :mode,
 		short: :m,
 		description: 'seleck mode for selected cipher and key length',
-		default: 'CFB'
+		default: 'CBC'
 	option :password,
 		short: :p,
 		description: 'encryption or decryption password'
@@ -63,45 +86,56 @@ settings = CLI.new do
 		description: 'list available modes for given cipher and key length'
 end.parse! do |settings|
 	if settings.list_ciphers
-		puts OpenSSL::Cipher[].join ' '
+		puts OpenSSL::Cipher.keys.join ' '
 		exit
 	end
-	OpenSSL::Cipher[settings.cipher] or fail "unsupported cipher #{settings.cipher}"
 
-	if settings.list_key_lengths
-		puts OpenSSL::Cipher[settings.cipher].join ' '
-		exit
-	end
-	settings.key_length = 
-	if OpenSSL::Cipher[settings.cipher].include? settings.key_length
-		settings.key_length
-	elsif OpenSSL::Cipher[settings.cipher].include? 0
-		0
-	else
-		nil
-	end
-	OpenSSL::Cipher[settings.cipher, settings.key_length] or fail "unsupported key length #{settings.key_length} for cipher #{settings.cipher}"
+	p modes = OpenSSL::Cipher[settings.cipher] or fail "unsupported cipher #{settings.cipher}"
 
 	if settings.list_modes
-		puts OpenSSL::Cipher[settings.cipher, settings.key_length].join ' '
+		puts modes.keys.join ' '
 		exit
 	end
-	settings.mode = 
-	if not OpenSSL::Cipher[settings.cipher, settings.key_length].include? settings.mode and OpenSSL::Cipher[settings.cipher, settings.key_length].include? nil
-		nil
+
+	key_lenghts =
+	if modes.include? settings.mode
+		modes[settings.mode]
 	else
-		settings.mode
+		fail "unsupported mode #{settings.mode} for key length #{settings.key_length} for cipher #{settings.cipher}"
 	end
-	OpenSSL::Cipher[settings.cipher, settings.key_length, settings.mode] or fail "unsupported mode #{settings.mode} for key length #{settings.key_length} for cipher #{settings.cipher}"
 
+	if settings.list_key_lengths
+		puts key_lenghts.keys.join ' '
+		exit
+	end
 
-	settings.cipher_name = OpenSSL::Cipher[settings.cipher, settings.key_length, settings.mode]
+	settings.cipher_name = 
+	if key_lenghts.include? :na
+		# cannot use key length with this algorithm
+		settings.key_lenghts = nil
+		key_lenghts[:na]
+	elsif key_lenghts.include? settings.key_length
+		key_lenghts[settings.key_length]
+	elsif key_lenghts.include? :any
+		key_lenghts[:any]
+	else
+		fail "unsupported key length #{settings.key_length} for cipher #{settings.cipher}"
+	end
+
 	settings.cipher = OpenSSL::Cipher::Cipher.new(settings.cipher_name)
 	settings.password_digest = OpenSSL::Digest.new(settings.password_digest)
+
+	fail "please provide passord" unless settings.password
 end
 
 puts "Using cipher: #{settings.cipher_name}"
 cipher = settings.cipher
+p cipher.key_len
+if settings.key_length
+	puts "Using key length: #{settings.key_length / 8 * 8}"
+	cipher.key_len = p settings.key_length / 8
+end
+
 cipher.encrypt
 
 key = settings.password_digest.update(settings.password).digest
@@ -118,6 +152,12 @@ puts "Data:"
 puts data.encode64
 
 decipher = OpenSSL::Cipher::Cipher.new(settings.cipher_name)
+p cipher.key_len
+if settings.key_length
+	puts "Using key length: #{settings.key_length / 8 * 8}"
+	decipher.key_len = p settings.key_length / 8
+end
+
 decipher.key = key
 decipher.iv = iv if iv
 puts decipher.update(data) + decipher.final
