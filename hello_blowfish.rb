@@ -2,6 +2,8 @@ require 'openssl'
 require 'base64'
 require 'cli'
 require 'haddock'
+require 'sdl4r'
+require 'logger'
 
 module CipherSelector
 	def [](c)
@@ -45,14 +47,19 @@ module CipherSelector
 end
 
 class String
-	def encode64
+	def base64_multiline
 		Base64.encode64(self)
+	end
+
+	def base64
+		Base64.strict_encode64(self)
 	end
 end
 
 OpenSSL::Cipher.extend(CipherSelector)
 
 settings = CLI.new do
+	stdin :data
 	option :cipher,
 		short: :c,
 		description: 'select cipher to use',
@@ -155,38 +162,51 @@ end.parse! do |settings|
 	fail "please provide passord" unless settings.password
 end
 
-puts "Using password: #{settings.password}"
-puts
-puts "Using cipher: #{settings.cipher_name}"
+log = Logger.new(STDERR)
+log.formatter = proc do |severity, datetime, progname, msg|
+	  "> #{msg}\n"
+end
+
+header = {}
+
+log.info "Using password: #{settings.password}"
+log.info "Using cipher: #{settings.cipher_name}"
 cipher = settings.cipher
+header[:cipher] = settings.cipher_name
 
 if settings.custom_key_length
-	puts "Using key length: #{settings.key_length / 8 * 8}"
-	cipher.key_len = settings.key_length / 8
+	round_length = settings.key_length / 8 * 8
+	log.info "Using key length: #{round_length}"
+	cipher.key_len = round_length / 8
+	header[:key_length] = round_length
 end
 
 cipher.encrypt
 
 key = settings.password_digest.update(settings.password).digest
-puts "Using key: #{key.encode64}"
+log.debug "Using key: #{key.base64}"
 cipher.key = key
 
 iv = (settings.initialization_vector || cipher.random_iv).tap do |iv|
-	puts "Using initialization vector: #{iv.encode64}"
+	log.debug "Using initialization vector: #{iv.base64}"
+	header[:iv] = iv.base64
 end if settings.mode
 
-data = cipher.update('hello world') + cipher.final
-
-puts "Data:"
-puts data.encode64
-
-decipher = OpenSSL::Cipher::Cipher.new(settings.cipher_name)
-if settings.custom_key_length
-	puts "Using key length: #{settings.key_length / 8 * 8}"
-	decipher.key_len = settings.key_length / 8
+puts SDL4R.dump header
+puts 'DATA:'
+while block = settings.stdin.read(1024 * 32) do
+	puts cipher.update(block).base64_multiline
 end
 
-decipher.key = key
-decipher.iv = iv if iv
-puts decipher.update(data) + decipher.final
+puts cipher.final.base64_multiline
+
+#decipher = OpenSSL::Cipher::Cipher.new(settings.cipher_name)
+#if settings.custom_key_length
+	#puts "Using key length: #{settings.key_length / 8 * 8}"
+	#decipher.key_len = settings.key_length / 8
+#end
+
+#decipher.key = key
+#decipher.iv = iv if iv
+#log.debug decipher.update(data) + decipher.final
 
