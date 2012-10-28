@@ -156,8 +156,7 @@ end.parse! do |settings|
 		fail "unsupported key length #{settings.key_length} for cipher #{settings.cipher}"
 	end
 
-	settings.cipher = OpenSSL::Cipher::Cipher.new(settings.cipher_name)
-	settings.password_digest = OpenSSL::Digest.new(settings.password_digest)
+	settings.password_digest
 
 	fail "please provide passord" unless settings.password
 end
@@ -167,37 +166,78 @@ log.formatter = proc do |severity, datetime, progname, msg|
 	  "> #{msg}\n"
 end
 
-header = {}
+class Key < String
+	def initialize(password, password_digest)
+		super OpenSSL::Digest.new(password_digest).update(password).digest
+	end
+end
+
+class Encrypter
+	def initialize(cipher_name, key, options = {})
+		@header = {}
+		log = options[:log] || Logger.new(STDERR)
+
+		log.info "Using cipher: #{cipher_name}"
+		@cipher = OpenSSL::Cipher::Cipher.new(cipher_name)
+		@header[:cipher] = cipher_name
+
+		@cipher.encrypt
+
+		if options[:key_length]
+			rounded_key_length = options[:key_length] / 8 * 8
+			log.info "Using key length: #{rounded_key_length}"
+			@cipher.key_len = rounded_key_length / 8
+			@header[:key_length] = rounded_key_length
+		end
+
+		log.debug "Using key: #{key.base64}"
+		@cipher.key = key
+
+		initialization_vector = if options[:initialization_vector]
+			options[:initialization_vector]
+		else
+			@cipher.random_iv
+		end
+		@cipher.iv = initialization_vector
+		@header[:initialization_vector] = initialization_vector.base64
+		log.debug "Using initialization vector: #{initialization_vector.base64}"
+
+	end
+
+	def each(&sink)
+		@sink = sink
+		@sink.call(SDL4R.dump(@header) + "\n")
+		self
+	end
+
+	def <<(data)
+		@sink.call @cipher.update(data)
+	end
+
+	def encrypt
+		yield self
+		@sink.call @cipher.final
+	end
+end
 
 log.info "Using password: #{settings.password}"
-log.info "Using cipher: #{settings.cipher_name}"
-cipher = settings.cipher
-header[:cipher] = settings.cipher_name
 
-if settings.custom_key_length
-	round_length = settings.key_length / 8 * 8
-	log.info "Using key length: #{round_length}"
-	cipher.key_len = round_length / 8
-	header[:key_length] = round_length
+options = {}
+options[:log] = log
+options[:key_length] = settings.key_length if settings.custom_key_length
+options[:initialization_vector] = settings.initialization_vector.ljust(16) if settings.initialization_vector
+
+e = Encrypter.new(settings.cipher_name, Key.new(settings.password, settings.password_digest), options)
+
+e.each do |encrypted_data_chunk|
+	print encrypted_data_chunk
 end
 
-cipher.encrypt
-
-key = settings.password_digest.update(settings.password).digest
-log.debug "Using key: #{key.base64}"
-cipher.key = key
-
-iv = (settings.initialization_vector || cipher.random_iv).tap do |iv|
-	log.debug "Using initialization vector: #{iv.base64}"
-	header[:iv] = iv.base64
-end if settings.mode
-
-puts SDL4R.dump header
-puts
-while block = settings.stdin.read(12) do
-	print cipher.update(block)
+e.encrypt do |e|
+	while data = settings.stdin.read(1024)
+		e << data
+	end
 end
-print cipher.final
 
 #decipher = OpenSSL::Cipher::Cipher.new(settings.cipher_name)
 #if settings.custom_key_length
