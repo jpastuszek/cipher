@@ -54,6 +54,10 @@ class String
 	def base64
 		Base64.strict_encode64(self)
 	end
+
+	def unbase64
+		Base64.strict_decode64(self)
+	end
 end
 
 OpenSSL::Cipher.extend(CipherSelector)
@@ -80,9 +84,13 @@ settings = CLI.new do
 		short: :i,
 		description: 'initialization vector for CBC, CFB, OFB and CTR modes or random if not specified'
 	option :password_digest,
-		short: :d,
+		short: :P,
 		description: 'digest to use to hash password for cipher key',
 		default: 'SHA256'
+	option :in_block_size,
+		description: 'input read block size',
+		default: 1024*256,
+		cast: Integer
 	switch :list_ciphers,
 		short: :C,
 		description: 'list ciphers'
@@ -92,6 +100,9 @@ settings = CLI.new do
 	switch :list_modes,
 		short: :M,
 		description: 'list available modes for given cipher and key length'
+	switch :decrypt,
+		short: :d,
+		description: 'decrypt data'
 end.parse! do |settings|
 	if settings.list_ciphers
 		puts OpenSSL::Cipher.keys.join ' '
@@ -163,7 +174,7 @@ end
 
 log = Logger.new(STDERR)
 log.formatter = proc do |severity, datetime, progname, msg|
-	  "> #{msg}\n"
+	  "#{settings.decrypt ? '<' : '>'} #{msg}\n"
 end
 
 class Key < String
@@ -175,9 +186,9 @@ end
 class Encrypter
 	def initialize(cipher_name, key, options = {})
 		@header = {}
-		log = options[:log] || Logger.new(STDERR)
+		@log = options[:log] || Logger.new(STDERR)
 
-		log.info "Using cipher: #{cipher_name}"
+		@log.info "Using cipher: #{cipher_name}"
 		@cipher = OpenSSL::Cipher::Cipher.new(cipher_name)
 		@header[:cipher] = cipher_name
 
@@ -185,12 +196,12 @@ class Encrypter
 
 		if options[:key_length]
 			rounded_key_length = options[:key_length] / 8 * 8
-			log.info "Using key length: #{rounded_key_length}"
+			@log.info "Using key length: #{rounded_key_length}"
 			@cipher.key_len = rounded_key_length / 8
 			@header[:key_length] = rounded_key_length
 		end
 
-		log.debug "Using key: #{key.base64}"
+		@log.debug "Using key: #{key.base64}"
 		@cipher.key = key
 
 		initialization_vector = if options[:initialization_vector]
@@ -200,8 +211,7 @@ class Encrypter
 		end
 		@cipher.iv = initialization_vector
 		@header[:initialization_vector] = initialization_vector.base64
-		log.debug "Using initialization vector: #{initialization_vector.base64}"
-
+		@log.debug "Using initialization vector: #{initialization_vector.base64}"
 	end
 
 	def each(&sink)
@@ -216,6 +226,51 @@ class Encrypter
 
 	def encrypt
 		yield self
+		fail 'no sink' unless @sink
+		@sink.call @cipher.final
+	end
+end
+
+class Decrypter
+	def initialize(key, options = {})
+		@log = options[:log] || Logger.new(STDERR)
+		@key = key
+	end
+
+	def <<(data)
+		unless @header
+			header, data = *data.split("\n\n", 2)
+			@header = SDL4R.load(header)
+
+			@log.info "Using decipher: #{@header.cipher}"
+			@cipher = OpenSSL::Cipher::Cipher.new(@header.cipher)
+
+			@cipher.decrypt
+
+			if @header.key_length
+				@log.info "Using key length: #{@header.key_length}"
+				@cipher.key_len = @header.key_length / 8
+			end
+
+			@log.debug "Using key: #{@key.base64}"
+			@cipher.key = @key
+
+			@log.debug "Using initialization vector: #{@header.initialization_vector}"
+			@cipher.iv = @header.initialization_vector.unbase64
+		end
+
+		fail 'no sink' unless @sink
+		fail 'bad header' unless @cipher
+
+		@sink.call @cipher.update(data)
+	end
+
+	def each(&sink)
+		@sink = sink
+	end
+
+	def decrypt
+		yield self
 		@sink.call @cipher.final
 	end
 end
@@ -227,25 +282,29 @@ options[:log] = log
 options[:key_length] = settings.key_length if settings.custom_key_length
 options[:initialization_vector] = settings.initialization_vector.ljust(16) if settings.initialization_vector
 
-e = Encrypter.new(settings.cipher_name, Key.new(settings.password, settings.password_digest), options)
+unless settings.decrypt
+	e = Encrypter.new(settings.cipher_name, Key.new(settings.password, settings.password_digest), options)
 
-e.each do |encrypted_data_chunk|
-	print encrypted_data_chunk
-end
+	e.each do |encrypted_data_chunk|
+		print encrypted_data_chunk
+	end
 
-e.encrypt do |e|
-	while data = settings.stdin.read(1024)
-		e << data
+	e.encrypt do |e|
+		while data = settings.stdin.read(settings.in_block_size)
+			e << data
+		end
+	end
+else
+	d = Decrypter.new(Key.new(settings.password, settings.password_digest), options)
+
+	d.each do |decrypted_data_chunk|
+		print decrypted_data_chunk
+	end
+
+	d.decrypt do |d|
+		while data = settings.stdin.read(settings.in_block_size)
+			d << data
+		end
 	end
 end
-
-#decipher = OpenSSL::Cipher::Cipher.new(settings.cipher_name)
-#if settings.custom_key_length
-	#puts "Using key length: #{settings.key_length / 8 * 8}"
-	#decipher.key_len = settings.key_length / 8
-#end
-
-#decipher.key = key
-#decipher.iv = iv if iv
-#log.debug decipher.update(data) + decipher.final
 
