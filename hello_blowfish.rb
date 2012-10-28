@@ -174,7 +174,7 @@ end
 
 log = Logger.new(STDERR)
 log.formatter = proc do |severity, datetime, progname, msg|
-	  "#{settings.decrypt ? '<' : '>'} #{msg}\n"
+	  "#{settings.decrypt ? 'D:' : 'E:'} #{msg}\n"
 end
 
 class Key < String
@@ -209,9 +209,12 @@ class Encrypter
 		else
 			@cipher.random_iv
 		end
-		@cipher.iv = initialization_vector
-		@header[:initialization_vector] = initialization_vector.base64
-		@log.debug "Using initialization vector: #{initialization_vector.base64}"
+
+		unless initialization_vector.empty?
+			@cipher.iv = initialization_vector 
+			@header[:initialization_vector] = initialization_vector.base64
+			@log.debug "Using initialization vector: #{initialization_vector.base64}"
+		end
 	end
 
 	def each(&sink)
@@ -255,8 +258,10 @@ class Decrypter
 			@log.debug "Using key: #{@key.base64}"
 			@cipher.key = @key
 
-			@log.debug "Using initialization vector: #{@header.initialization_vector}"
-			@cipher.iv = @header.initialization_vector.unbase64
+			if @header.initialization_vector
+				@log.debug "Using initialization vector: #{@header.initialization_vector}"
+				@cipher.iv = @header.initialization_vector.unbase64
+			end
 		end
 
 		fail 'no sink' unless @sink
@@ -282,8 +287,10 @@ options[:log] = log
 options[:key_length] = settings.key_length if settings.custom_key_length
 options[:initialization_vector] = settings.initialization_vector.ljust(16) if settings.initialization_vector
 
+key = Key.new(settings.password, settings.password_digest)
+
 unless settings.decrypt
-	e = Encrypter.new(settings.cipher_name, Key.new(settings.password, settings.password_digest), options)
+	e = Encrypter.new(settings.cipher_name, key, options)
 
 	e.each do |encrypted_data_chunk|
 		print encrypted_data_chunk
@@ -295,7 +302,7 @@ unless settings.decrypt
 		end
 	end
 else
-	d = Decrypter.new(Key.new(settings.password, settings.password_digest), options)
+	d = Decrypter.new(key, options)
 
 	d.each do |decrypted_data_chunk|
 		print decrypted_data_chunk
