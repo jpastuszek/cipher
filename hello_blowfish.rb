@@ -193,12 +193,11 @@ iv = (settings.initialization_vector || cipher.random_iv).tap do |iv|
 end if settings.mode
 
 puts SDL4R.dump header
-puts 'DATA:'
-while block = settings.stdin.read(1024 * 32) do
-	puts cipher.update(block).base64_multiline
+puts
+while block = settings.stdin.read(12) do
+	print cipher.update(block)
 end
-
-puts cipher.final.base64_multiline
+print cipher.final
 
 #decipher = OpenSSL::Cipher::Cipher.new(settings.cipher_name)
 #if settings.custom_key_length
