@@ -14,30 +14,64 @@ module CipherSelector
 		cipher_tree.keys
 	end
 
+	def flat_list
+		cipher_tree.each do |cipher, modes|
+			modes.each do |mode, keys|
+				keys.each_key do |key|
+					yield cipher, mode, key
+				end
+			end
+		end
+	end
+
 	private
 
 	def cipher_tree
 		return @ciphers if @ciphers
 		@ciphers = {}
+		# default alias is for CBC mode
+		aliases = {
+			'RC2'			=> ['RC2', 128, 'CBC'],
+			'IDEA'		=> ['IDEA', :custom, 'CBC'],
+			'DES'			=> ['DES', :custom, 'CBC'],
+			'CAST'		=> ['CAST', :custom, 'CBC'],
+			'BF'			=> ['BF', :custom, 'CBC'],
+			'DES-EDE' => ['DES-EDE', :custom, 'ECB'],
+			'DES3'		=> ['DES-EDE3', :custom, 'CBC'],
+			'DESX'		=> ['DES-EDE3', :custom, 'none'],
+			'RC4'			=> ['RC4', :custom, 'none'], # streaming cipher: no mode
+			'AES128'	=> ['AES', 128, 'CBC'],
+			'AES192'	=> ['AES', 192, 'CBC'],
+			'AES256'	=> ['AES', 256, 'CBC'],
+		}
+
 		# use only upcased aliases
-		OpenSSL::Cipher.ciphers.select{|a| a == a.upcase}.sort.uniq.map do |c|
+		OpenSSL::Cipher.ciphers.select{|a| a == a.upcase}.sort do |a, b|
+			# sort aliases at the end so that aliaste take precedence in selection
+			next a <=> b if aliases.member? a and aliases.member? b
+			next 1 if aliases.member? a
+			next -1 if aliases.member? b
+			a <=> b
+		end.uniq.map do |c|
 			# all variants of alias construction
 			cipher, key_length, mode = 
 			case c
+				when lambda{|c| aliases.member? c}
+					aliases[c]
 				when /([^-]+)-([0-9]+)-(.*)/
 					[$1, $2.to_i, $3]
 				when /([^-]+)-([0-9]+)/
 					[$1, $2.to_i, 'none']
-				when /([^-]+)-(.*)/
+				when /(.*)-(.*)/
 					[$1, :custom, $2]
 				else
-					[c, :custom, 'none']
+					#STDERR.puts "unsupported cipher alias: #{c}"
 			end
 			#puts c
 			#puts "c: %s k: %s m: %s" % [cipher, key_length, mode]
 
 			# some algorithms does not support setting key sizes
-			key_length = :na if ['DES', 'DES3'].include? cipher
+			key_length = :not_available if cipher =~ /^DES/
 			
 			# build nested hash
 			((@ciphers[cipher] ||= {})[mode] ||= {})[key_length] = c
@@ -91,6 +125,9 @@ settings = CLI.new do
 		description: 'input read block size',
 		default: 1024*256,
 		cast: Integer
+	switch :list,
+		short: :L,
+		description: 'list all cipher, mode and key combinations'
 	switch :list_ciphers,
 		short: :C,
 		description: 'list ciphers'
@@ -104,15 +141,22 @@ settings = CLI.new do
 		short: :d,
 		description: 'decrypt data'
 end.parse! do |settings|
+	if settings.list
+		OpenSSL::Cipher.flat_list do |*list|
+			STDERR.puts "%s %s %s" % list
+		end
+		exit
+	end
+
 	if settings.list_ciphers
-		puts OpenSSL::Cipher.keys.join ' '
+		STDERR.puts OpenSSL::Cipher.keys.sort.join ' '
 		exit
 	end
 
 	modes = OpenSSL::Cipher[settings.cipher] or fail "unsupported cipher #{settings.cipher}"
 
 	if settings.list_modes
-		puts modes.keys.join ' '
+		STDERR.puts modes.keys.map(&:to_s).sort.join ' '
 		exit
 	end
 
@@ -133,7 +177,11 @@ end.parse! do |settings|
 	end
 
 	if settings.list_key_lengths
-		puts key_lengths.keys.join ' '
+		STDERR.puts key_lengths.keys.sort{ |a, b|
+			next 1 if not a.is_a? Numeric
+			next -1 if not b.is_a? Numeric
+			a <=> b
+		}.join(' ')
 		exit
 	end
 
@@ -143,7 +191,7 @@ end.parse! do |settings|
 		if longest
 			longest
 		else	 
-			if key_lengths.include? :na
+			if key_lengths.include? :not_available
 				# cannot use key length with this algorithm
 				nil
 			else
@@ -151,13 +199,13 @@ end.parse! do |settings|
 			end
 		end
 	else
-		fail "cipher #{settings.cipher} does not support key length option" if key_lengths.include? :na
+		fail "cipher #{settings.cipher} does not support key length option" if key_lengths.include? :not_available
 		settings.key_length.to_i
 	end
 
 	settings.cipher_name = 
-	if key_lengths.include? :na
-		key_lengths[:na]
+	if key_lengths.include? :not_available
+		key_lengths[:not_available]
 	elsif key_lengths.include? settings.key_length
 		key_lengths[settings.key_length]
 	elsif key_lengths.include? :custom
