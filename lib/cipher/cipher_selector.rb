@@ -36,9 +36,10 @@ class CipherSelector
 			end
 
 			def key_length(key_length)
-				key_lengths.include? :not_available and fail "cipher #@cipher does not support key length selection"
-
-				if @key_length_tree.include? key_length
+				if key_lengths.include? :not_available
+					fail "cipher #@cipher does not support key length selection" if key_length
+					Cipher.new(@key_length_tree[:not_available], @cipher, @mode, nil)
+				elsif @key_length_tree.include? key_length
 					Cipher.new(@key_length_tree[key_length], @cipher, @mode, key_length)
 				elsif @key_length_tree.include? :custom
 					Cipher.new(@key_length_tree[:custom], @cipher, @mode, key_length, true)
@@ -48,18 +49,13 @@ class CipherSelector
 			end
 
 			def longest_key(custom_key_length = 256)
-				if key_lengths.include? :not_available
-					openssl_cipher_name = @key_length_tree[:not_available]
-					return Cipher.new(openssl_cipher_name, @cipher, @mode, :not_available, nil)
-				end
-
 				longest = key_lengths.select{|k| k.is_a? Numeric}.sort.last
 				if longest
 					key_length(longest)
 				else	 
 					if key_lengths.include? :not_available
 						# cannot use key length with this algorithm
-						key_length(:not_available)
+						key_length(nil)
 					else
 						key_length(custom_key_length)
 					end

@@ -126,27 +126,33 @@ class Key < String
 end
 
 class Encrypter
-	def initialize(cipher_name, key, options = {})
-		@header = {}
+	def initialize(cipher, mode, key_length, key, options = {})
 		@log = options[:log] || Logger.new(STDERR)
+		@header = {}
+
+		cipher = CipherSelector.new.cipher(cipher).mode(mode).key_length(key_length)
+
+		@header[:cipher] = cipher.cipher
+		@header[:mode] = cipher.mode
+		@header[:key_length] = cipher.key_length if cipher.key_length
+
+		cipher_name = cipher.openssl_cipher_name
 
 		@log.info "Using cipher: #{cipher_name}"
 		@cipher = OpenSSL::Cipher::Cipher.new(cipher_name)
-		@header[:cipher] = cipher_name
 
 		@cipher.encrypt
 
-		if options[:key_length]
-			rounded_key_length = options[:key_length] / 8 * 8
-			@log.info "Using key length: #{rounded_key_length}"
-			@cipher.key_len = rounded_key_length / 8
-			@header[:key_length] = rounded_key_length
+		if cipher.need_key_length_set?
+			@log.info "Using key length: #{cipher.key_length}"
+			@cipher.key_len = cipher.key_length / 8
 		end
 
 		@log.debug "Using key: #{key.base64}"
 		@cipher.key = key
 
-		initialization_vector = if options[:initialization_vector]
+		initialization_vector = 
+		if options[:initialization_vector]
 			options[:initialization_vector]
 		else
 			@cipher.random_iv
@@ -187,14 +193,16 @@ class Decrypter
 			header, data = *data.split("\n\n", 2)
 			@header = SDL4R.load(header)
 
-			@log.info "Using decipher: #{@header.cipher}"
-			@cipher = OpenSSL::Cipher::Cipher.new(@header.cipher)
+			cipher = CipherSelector.new.cipher(@header.cipher).mode(@header.mode).key_length(@header.key_length)
+
+			@log.info "Using decipher: #{cipher.openssl_cipher_name}"
+			@cipher = OpenSSL::Cipher::Cipher.new(cipher.openssl_cipher_name)
 
 			@cipher.decrypt
 
-			if @header.key_length
-				@log.info "Using key length: #{@header.key_length}"
-				@cipher.key_len = @header.key_length / 8
+			if cipher.need_key_length_set?
+				@log.info "Using key length: #{cipher.key_length}"
+				@cipher.key_len = cipher.key_length / 8
 			end
 
 			@log.debug "Using key: #{@key.base64}"
@@ -218,7 +226,7 @@ class Decrypter
 
 	def decrypt
 		yield self
-		@sink.call @cipher.final
+		@sink.call @cipher.final if @cipher
 	end
 end
 
@@ -229,13 +237,12 @@ end
 
 options = {}
 options[:log] = log
-options[:key_length] = settings.openssl_cipher.key_length if settings.openssl_cipher.need_key_length_set?
 options[:initialization_vector] = settings.initialization_vector.ljust(16) if settings.initialization_vector
 
 key = Key.new(settings.password, settings.password_digest)
 
 unless settings.decrypt
-	e = Encrypter.new(settings.openssl_cipher.openssl_cipher_name, key, options)
+	e = Encrypter.new(settings.openssl_cipher.cipher, settings.openssl_cipher.mode, settings.openssl_cipher.key_length, key, options)
 
 	e.each do |encrypted_data_chunk|
 		print encrypted_data_chunk

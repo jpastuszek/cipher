@@ -115,10 +115,10 @@ describe CipherSelector do
 			subject.longest_key.openssl_cipher_name.should == 'AES256'
 		end
 
-		it '#longest_key should select :not_available key length for ciphers not supporting key lenghts' do
+		it '#longest_key should select nil key length for ciphers not supporting key lenghts' do
 			cipher = CipherSelector.new.cipher('DES').mode('CBC').longest_key
 			cipher.openssl_cipher_name.should == 'DES'
-			cipher.key_length.should == :not_available
+			cipher.key_length.should be_nil
 		end
 
 		it '#longest_key should select longest predefined key length when custom key length is supported' do
