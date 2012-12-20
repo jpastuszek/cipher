@@ -1,0 +1,368 @@
+#!/usr/bin/env ruby
+
+require 'openssl'
+require 'base64'
+require 'cli'
+require 'haddock'
+require 'sdl4r'
+require 'logger'
+
+module CipherSelector
+	def [](c)
+		cipher_tree[c]
+	end
+	
+	def keys
+		cipher_tree.keys
+	end
+
+	def flat_list
+		cipher_tree.each do |cipher, modes|
+			modes.each do |mode, keys|
+				keys.each_key do |key|
+					yield cipher, mode, key
+				end
+			end
+		end
+	end
+
+	private
+
+	def cipher_tree
+		return @ciphers if @ciphers
+		@ciphers = {}
+		# default alias is for CBC mode
+		aliases = {
+			'RC2'			=> ['RC2', 128, 'CBC'],
+			'IDEA'		=> ['IDEA', :custom, 'CBC'],
+			'DES'			=> ['DES', :custom, 'CBC'],
+			'CAST'		=> ['CAST', :custom, 'CBC'],
+			'BF'			=> ['BF', :custom, 'CBC'],
+			'DES-EDE' => ['DES-EDE', :custom, 'ECB'],
+			'DES3'		=> ['DES-EDE3', :custom, 'CBC'],
+			'DESX'		=> ['DES-EDE3', :custom, 'none'],
+			'RC4'			=> ['RC4', :custom, 'none'], # streaming cipher: no mode
+			'AES128'	=> ['AES', 128, 'CBC'],
+			'AES192'	=> ['AES', 192, 'CBC'],
+			'AES256'	=> ['AES', 256, 'CBC'],
+		}
+
+		# use only upcased aliases
+		OpenSSL::Cipher.ciphers.select{|a| a == a.upcase}.sort do |a, b|
+			# sort aliases at the end so that aliaste take precedence in selection
+			next a <=> b if aliases.member? a and aliases.member? b
+			next 1 if aliases.member? a
+			next -1 if aliases.member? b
+			a <=> b
+		end.uniq.map do |c|
+			# all variants of alias construction
+			cipher, key_length, mode = 
+			case c
+				when lambda{|c| aliases.member? c}
+					aliases[c]
+				when /([^-]+)-([0-9]+)-(.*)/
+					[$1, $2.to_i, $3]
+				when /([^-]+)-([0-9]+)/
+					[$1, $2.to_i, 'none']
+				when /(.*)-(.*)/
+					[$1, :custom, $2]
+				else
+					#STDERR.puts "unsupported cipher alias: #{c}"
+			end
+			#puts c
+			#puts "c: %s k: %s m: %s" % [cipher, key_length, mode]
+
+			# some algorithms does not support setting key sizes
+			key_length = :not_available if cipher =~ /^DES/
+			
+			# build nested hash
+			((@ciphers[cipher] ||= {})[mode] ||= {})[key_length] = c
+		end
+		@ciphers
+	end
+end
+
+class String
+	def base64_multiline
+		Base64.encode64(self)
+	end
+
+	def base64
+		Base64.strict_encode64(self)
+	end
+
+	def unbase64
+		Base64.strict_decode64(self)
+	end
+end
+
+OpenSSL::Cipher.extend(CipherSelector)
+
+settings = CLI.new do
+	stdin :data
+	option :cipher,
+		short: :c,
+		description: 'select cipher to use',
+		default: 'AES'
+	option :key_length,
+		short: :k,
+		description: 'cipher key length in bits (rounded to multiple of 8)',
+		cast: Integer,
+		default_label: 'longest preset'
+	option :mode,
+		short: :m,
+		description: 'cipher streaming mode',
+		default: 'prefer CBC'
+	option :password,
+		short: :p,
+		description: 'encryption or decryption password',
+		default_label: 'auto generated'
+	option :initialization_vector,
+		short: :i,
+		description: 'initialization vector for CBC, CFB, OFB and CTR modes',
+		default_label: 'random'
+	option :password_digest,
+		short: :P,
+		description: 'digest to use to hash password for cipher key',
+		default: 'SHA256'
+	option :in_block_size,
+		description: 'input read block size',
+		default: 1024*256,
+		cast: Integer
+	switch :list,
+		short: :L,
+		description: 'list all cipher, mode and key combinations'
+	switch :list_ciphers,
+		short: :C,
+		description: 'list ciphers'
+	switch :list_key_lengths,
+		short: :K,
+		description: 'list available key lenghts for selected cipher'
+	switch :list_modes,
+		short: :M,
+		description: 'list available modes for given cipher and key length'
+	switch :decrypt,
+		short: :d,
+		description: 'decrypt data'
+end.parse! do |settings|
+	if settings.list
+		OpenSSL::Cipher.flat_list do |*list|
+			STDERR.puts "%s %s %s" % list
+		end
+		exit
+	end
+
+	if settings.list_ciphers
+		STDERR.puts OpenSSL::Cipher.keys.sort.join ' '
+		exit
+	end
+
+	modes = OpenSSL::Cipher[settings.cipher] or fail "unsupported cipher #{settings.cipher}"
+
+	if settings.list_modes
+		STDERR.puts modes.keys.map(&:to_s).sort.join ' '
+		exit
+	end
+
+	if settings.mode =~ /prefer (.+)/
+		settings.mode =
+		if modes.keys.include? $1
+			$1
+		else
+			'none'
+		end
+	end
+
+	key_lengths =
+	if modes.include? settings.mode
+		modes[settings.mode]
+	else
+		fail "unsupported mode #{settings.mode} for key length #{settings.key_length} for cipher #{settings.cipher}"
+	end
+
+	if settings.list_key_lengths
+		STDERR.puts key_lengths.keys.sort{ |a, b|
+			next 1 if not a.is_a? Numeric
+			next -1 if not b.is_a? Numeric
+			a <=> b
+		}.join(' ')
+		exit
+	end
+
+	settings.key_length =
+	unless settings.key_length
+		longest = key_lengths.keys.select{|k| k.is_a? Numeric}.sort.last
+		if longest
+			longest
+		else	 
+			if key_lengths.include? :not_available
+				# cannot use key length with this algorithm
+				nil
+			else
+				128
+			end
+		end
+	else
+		fail "cipher #{settings.cipher} does not support key length option" if key_lengths.include? :not_available
+		settings.key_length.to_i
+	end
+
+	settings.cipher_name = 
+	if key_lengths.include? :not_available
+		key_lengths[:not_available]
+	elsif key_lengths.include? settings.key_length
+		key_lengths[settings.key_length]
+	elsif key_lengths.include? :custom
+		settings.custom_key_length = true
+		key_lengths[:custom]
+	else
+		fail "unsupported key length #{settings.key_length} for cipher #{settings.cipher}"
+	end
+end
+
+log = Logger.new(STDERR)
+log.formatter = proc do |severity, datetime, progname, msg|
+	  "#{settings.decrypt ? 'D:' : 'E:'} #{msg}\n"
+end
+
+class Key < String
+	def initialize(password, password_digest)
+		super OpenSSL::Digest.new(password_digest).update(password).digest
+	end
+end
+
+class Encrypter
+	def initialize(cipher_name, key, options = {})
+		@header = {}
+		@log = options[:log] || Logger.new(STDERR)
+
+		@log.info "Using cipher: #{cipher_name}"
+		@cipher = OpenSSL::Cipher::Cipher.new(cipher_name)
+		@header[:cipher] = cipher_name
+
+		@cipher.encrypt
+
+		if options[:key_length]
+			rounded_key_length = options[:key_length] / 8 * 8
+			@log.info "Using key length: #{rounded_key_length}"
+			@cipher.key_len = rounded_key_length / 8
+			@header[:key_length] = rounded_key_length
+		end
+
+		@log.debug "Using key: #{key.base64}"
+		@cipher.key = key
+
+		initialization_vector = if options[:initialization_vector]
+			options[:initialization_vector]
+		else
+			@cipher.random_iv
+		end
+
+		unless initialization_vector.empty?
+			@cipher.iv = initialization_vector 
+			@header[:initialization_vector] = initialization_vector.base64
+			@log.debug "Using initialization vector: #{initialization_vector.base64}"
+		end
+	end
+
+	def each(&sink)
+		@sink = sink
+		@sink.call(SDL4R.dump(@header) + "\n")
+		self
+	end
+
+	def <<(data)
+		@sink.call @cipher.update(data)
+	end
+
+	def encrypt
+		yield self
+		fail 'no sink' unless @sink
+		@sink.call @cipher.final
+	end
+end
+
+class Decrypter
+	def initialize(key, options = {})
+		@log = options[:log] || Logger.new(STDERR)
+		@key = key
+	end
+
+	def <<(data)
+		unless @header
+			header, data = *data.split("\n\n", 2)
+			@header = SDL4R.load(header)
+
+			@log.info "Using decipher: #{@header.cipher}"
+			@cipher = OpenSSL::Cipher::Cipher.new(@header.cipher)
+
+			@cipher.decrypt
+
+			if @header.key_length
+				@log.info "Using key length: #{@header.key_length}"
+				@cipher.key_len = @header.key_length / 8
+			end
+
+			@log.debug "Using key: #{@key.base64}"
+			@cipher.key = @key
+
+			if @header.initialization_vector
+				@log.debug "Using initialization vector: #{@header.initialization_vector}"
+				@cipher.iv = @header.initialization_vector.unbase64
+			end
+		end
+
+		fail 'no sink' unless @sink
+		fail 'bad header' unless @cipher
+
+		@sink.call @cipher.update(data)
+	end
+
+	def each(&sink)
+		@sink = sink
+	end
+
+	def decrypt
+		yield self
+		@sink.call @cipher.final
+	end
+end
+
+unless settings.password
+	settings.password = Haddock::Password.generate
+	log.info "Using password: #{settings.password}"
+end
+
+options = {}
+options[:log] = log
+options[:key_length] = settings.key_length if settings.custom_key_length
+options[:initialization_vector] = settings.initialization_vector.ljust(16) if settings.initialization_vector
+
+key = Key.new(settings.password, settings.password_digest)
+
+unless settings.decrypt
+	e = Encrypter.new(settings.cipher_name, key, options)
+
+	e.each do |encrypted_data_chunk|
+		print encrypted_data_chunk
+	end
+
+	e.encrypt do |e|
+		while data = settings.stdin.read(settings.in_block_size)
+			e << data
+		end
+	end
+else
+	d = Decrypter.new(key, options)
+
+	d.each do |decrypted_data_chunk|
+		print decrypted_data_chunk
+	end
+
+	d.decrypt do |d|
+		while data = settings.stdin.read(settings.in_block_size)
+			d << data
+		end
+	end
+end
+
