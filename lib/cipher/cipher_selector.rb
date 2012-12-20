@@ -4,19 +4,22 @@ class CipherSelector
 	class ModeSelector
 		class KeyLengthSelector
 			class Cipher
-				def initialize(openssl_cipher_name, cipher, mode, key_length, custom_key_length = nil)
+				def initialize(openssl_cipher_name, cipher, mode, key_length, need_key_length_set = false)
 					@openssl_cipher_name = openssl_cipher_name
 					@cipher = cipher
 					@mode = mode
 					@key_length = key_length
-					@custom_key_length = custom_key_length
+					@need_key_length_set = need_key_length_set
 				end
 
 				attr_reader :openssl_cipher_name
 				attr_reader :cipher
 				attr_reader :mode
 				attr_reader :key_length
-				attr_reader :custom_key_length
+
+				def need_key_length_set?
+					@need_key_length_set
+				end
 			end
 
 			def initialize(key_length_tree, cipher, mode)
@@ -32,12 +35,24 @@ class CipherSelector
 				@key_length_tree.keys
 			end
 
-			def key_length(key_length, custom_key_length = nil)
-				openssl_cipher_name = @key_length_tree[key_length] or fail "unsupported key length #{key_length} for mode #{@mode} for cipher #{@cipher}"
-				Cipher.new(openssl_cipher_name, @cipher, @mode, key_length, custom_key_length)
+			def key_length(key_length)
+				key_lengths.include? :not_available and fail "cipher #@cipher does not support key length selection"
+
+				if @key_length_tree.include? key_length
+					Cipher.new(@key_length_tree[key_length], @cipher, @mode, key_length)
+				elsif @key_length_tree.include? :custom
+					Cipher.new(@key_length_tree[:custom], @cipher, @mode, key_length, true)
+				else
+					fail "unsupported key length #{key_length} for mode #{@mode} for cipher #{@cipher}"
+				end
 			end
 
 			def longest_key(custom_key_length = 256)
+				if key_lengths.include? :not_available
+					openssl_cipher_name = @key_length_tree[:not_available]
+					return Cipher.new(openssl_cipher_name, @cipher, @mode, :not_available, nil)
+				end
+
 				longest = key_lengths.select{|k| k.is_a? Numeric}.sort.last
 				if longest
 					key_length(longest)
@@ -46,7 +61,7 @@ class CipherSelector
 						# cannot use key length with this algorithm
 						key_length(:not_available)
 					else
-						key_length(:custom, custom_key_length)
+						key_length(custom_key_length)
 					end
 				end
 			end

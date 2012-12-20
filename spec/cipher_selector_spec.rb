@@ -83,6 +83,12 @@ describe CipherSelector do
 			end.should raise_error RuntimeError, "unsupported key length 123 for mode CBC for cipher AES"
 		end
 
+		it 'should raise error if selecting key length is not supported' do
+			lambda do
+				CipherSelector.new.cipher('DES').mode('CBC').key_length(128)
+			end.should raise_error RuntimeError, "cipher DES does not support key length selection"
+		end
+
 		it 'should provide CipherSelector::ModeSelector::KeyLengthSelector::Cipher for given key length' do
 			subject.key_length(128).should be_a CipherSelector::ModeSelector::KeyLengthSelector::Cipher
 		end
@@ -91,15 +97,25 @@ describe CipherSelector do
 			subject.key_length(128).openssl_cipher_name.should == 'AES128'
 		end
 
+		it 'should support selecting custom key length with supported cipher' do
+			cipher = CipherSelector.new.cipher('RC2').mode('CBC').key_length(92)
+			cipher.openssl_cipher_name.should == 'RC2-CBC'
+			cipher.key_length.should == 92
+			cipher.need_key_length_set?.should be_true
+		end
+
+		it 'should preferr selecting predefined key length with supported cipher if requested matches' do
+			cipher = CipherSelector.new.cipher('RC2').mode('CBC').key_length(128)
+			cipher.openssl_cipher_name.should == 'RC2'
+			cipher.key_length.should == 128
+			cipher.need_key_length_set?.should be_false
+		end
+
 		it 'should support selecting longest available key length' do
 			subject.longest_key.openssl_cipher_name.should == 'AES256'
 		end
 
 		it '#longest_key should select :not_available key length for ciphers not supporting key lenghts' do
-			#CipherSelector.new.flat_list do |c, m, k|
-				#puts [c, m, k].inspect
-			#end
-
 			cipher = CipherSelector.new.cipher('DES').mode('CBC').longest_key
 			cipher.openssl_cipher_name.should == 'DES'
 			cipher.key_length.should == :not_available
@@ -114,15 +130,15 @@ describe CipherSelector do
 		it '#longest_key should select 256 key length for ciphers supporting only any key length' do
 			cipher = CipherSelector.new.cipher('IDEA').mode('CBC').longest_key
 			cipher.openssl_cipher_name.should == 'IDEA'
-			cipher.key_length.should == :custom
-			cipher.custom_key_length.should == 256
+			cipher.key_length.should == 256
+			cipher.need_key_length_set?.should be_true
 		end
 
 		it '#longest_key should select given key length for ciphers supporting only any key length' do
 			cipher = CipherSelector.new.cipher('IDEA').mode('CBC').longest_key(128)
 			cipher.openssl_cipher_name.should == 'IDEA'
-			cipher.key_length.should == :custom
-			cipher.custom_key_length.should == 128
+			cipher.key_length.should == 128
+			cipher.need_key_length_set?.should be_true
 		end
 	end
 end
