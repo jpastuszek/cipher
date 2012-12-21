@@ -1,26 +1,11 @@
 #!/usr/bin/env ruby
 
 require 'openssl'
-require 'base64'
 require 'cli'
 require 'haddock'
 require 'sdl4r'
 require 'logger'
 require_relative '../lib/cipher'
-
-class String
-	def base64_multiline
-		Base64.encode64(self)
-	end
-
-	def base64
-		Base64.strict_encode64(self)
-	end
-
-	def unbase64
-		Base64.strict_decode64(self)
-	end
-end
 
 settings = CLI.new do
 	stdin :data
