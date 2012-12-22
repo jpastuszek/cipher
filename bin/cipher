@@ -1,9 +1,7 @@
 #!/usr/bin/env ruby
 
-require 'openssl'
 require 'cli'
 require 'haddock'
-require 'sdl4r'
 require 'logger'
 require_relative '../lib/cipher'
 
@@ -135,7 +133,8 @@ unless settings.decrypt
 		print message_data
 	end
 	.body do |envelope_sink|
-		encrypter.each do |encrypted_data|
+		encrypter
+		.each do |encrypted_data|
 			envelope_sink << encrypted_data
 		end
 		.process do |encrypter_sink|
@@ -155,7 +154,8 @@ else
 			.key_length(header.key_length)
 
 		decrypter_fiber = Fiber.new do
-			Decrypter.new(cipher_selector, key, header.initialization_vector.unbase64, options).each do |data|
+			Decrypter.new(cipher_selector, key, header.initialization_vector.unbase64, options)
+			.each do |data|
 				print data
 			end
 			.process do |decrypter_sink|

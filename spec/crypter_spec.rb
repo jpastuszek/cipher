@@ -1,8 +1,10 @@
 require_relative '../lib/cipher/crypter'
 
+log = Logger.new('test.log')
+
 describe Encrypter do
 	subject do
-		Encrypter.new(CipherSelector.new.cipher('AES').mode('CBC').key_length(128), 'k' * 16, initialization_vector: 'iv' * 8)
+		Encrypter.new(CipherSelector.new.cipher('AES').mode('CBC').key_length(128), 'k' * 16, initialization_vector: 'iv' * 8, log: log)
 	end
 
 	it 'should encrypt data stream with given cipher specs and key' do
@@ -25,11 +27,11 @@ describe Encrypter do
 	end
 
 	it 'should provide random initialization vector if not specified' do
-		Encrypter.new(CipherSelector.new.cipher('AES').mode('CBC').key_length(128), 'k' * 16).initialization_vector.length.should == 16
+		Encrypter.new(CipherSelector.new.cipher('AES').mode('CBC').key_length(128), 'k' * 16, log: log).initialization_vector.length.should == 16
 	end
 
 	it 'should work with custom key length' do
-		subject = Encrypter.new(CipherSelector.new.cipher('BF').mode('CBC').key_length(64), 'k' * 16, initialization_vector: 'iv' * 8)
+		subject = Encrypter.new(CipherSelector.new.cipher('BF').mode('CBC').key_length(64), 'k' * 16, initialization_vector: 'iv' * 8, log: log)
 
 		encrypted = ''
 		subject.each do |data|
@@ -48,7 +50,7 @@ end
 
 describe Decrypter do
 	subject do
-		Decrypter.new(CipherSelector.new.cipher('AES').mode('CBC').key_length(128), 'k' * 16, 'iv' * 8)
+		Decrypter.new(CipherSelector.new.cipher('AES').mode('CBC').key_length(128), 'k' * 16, 'iv' * 8, log: log)
 	end
 
 	it 'should decrypt data stream with given cipher specs, key and initialization vector' do
@@ -65,7 +67,7 @@ describe Decrypter do
 	end
 
 	it 'should work with custom key length' do
-		subject = Decrypter.new(CipherSelector.new.cipher('BF').mode('CBC').key_length(64), 'k' * 16, 'iv' * 8)
+		subject = Decrypter.new(CipherSelector.new.cipher('BF').mode('CBC').key_length(64), 'k' * 16, 'iv' * 8, log: log)
 
 		decrypted = ''
 		subject.each do |data|
