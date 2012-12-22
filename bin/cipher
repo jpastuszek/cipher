@@ -9,6 +9,7 @@ require_relative '../lib/cipher'
 
 settings = CLI.new do
 	stdin :data
+	description "Encrypts or decrypts data on stdin.\nExample usage: cat LICENSE.txt | be bin/cipher -p test --in-block-size 8 | be bin/cipher -d -p test --in-block-size 8"
 	option :cipher,
 		short: :c,
 		description: 'select cipher to use',
@@ -91,7 +92,7 @@ end.parse! do |settings|
 		exit
 	end
 
-	settings.openssl_cipher =
+	settings.cipher_selector =
 	if settings.key_length
 		key_length_selector.key_length(settings.key_length.to_i)
 	else
@@ -110,111 +111,6 @@ class Key < String
 	end
 end
 
-class Encrypter
-	def initialize(cipher, mode, key_length, key, options = {})
-		@log = options[:log] || Logger.new(STDERR)
-		@header = {}
-
-		cipher = CipherSelector.new.cipher(cipher).mode(mode).key_length(key_length)
-
-		@header[:cipher] = cipher.cipher
-		@header[:mode] = cipher.mode
-		@header[:key_length] = cipher.key_length if cipher.key_length
-
-		cipher_name = cipher.openssl_cipher_name
-
-		@log.info "Using cipher: #{cipher_name}"
-		@cipher = OpenSSL::Cipher::Cipher.new(cipher_name)
-
-		@cipher.encrypt
-
-		if cipher.need_key_length_set?
-			@log.info "Using key length: #{cipher.key_length}"
-			@cipher.key_len = cipher.key_length / 8
-		end
-
-		@log.debug "Using key: #{key.base64}"
-		@cipher.key = key
-
-		initialization_vector = 
-		if options[:initialization_vector]
-			options[:initialization_vector]
-		else
-			@cipher.random_iv
-		end
-
-		unless initialization_vector.empty?
-			@cipher.iv = initialization_vector 
-			@header[:initialization_vector] = initialization_vector.base64
-			@log.debug "Using initialization vector: #{initialization_vector.base64}"
-		end
-	end
-
-	def each(&sink)
-		@sink = sink
-		@sink.call(SDL4R.dump(@header) + "\n")
-		self
-	end
-
-	def <<(data)
-		@sink.call @cipher.update(data)
-	end
-
-	def encrypt
-		yield self
-		fail 'no sink' unless @sink
-		@sink.call @cipher.final
-	end
-end
-
-class Decrypter
-	def initialize(key, options = {})
-		@log = options[:log] || Logger.new(STDERR)
-		@key = key
-	end
-
-	def <<(data)
-		unless @header
-			header, data = *data.split("\n\n", 2)
-			@header = SDL4R.load(header)
-
-			cipher = CipherSelector.new.cipher(@header.cipher).mode(@header.mode).key_length(@header.key_length)
-
-			@log.info "Using decipher: #{cipher.openssl_cipher_name}"
-			@cipher = OpenSSL::Cipher::Cipher.new(cipher.openssl_cipher_name)
-
-			@cipher.decrypt
-
-			if cipher.need_key_length_set?
-				@log.info "Using key length: #{cipher.key_length}"
-				@cipher.key_len = cipher.key_length / 8
-			end
-
-			@log.debug "Using key: #{@key.base64}"
-			@cipher.key = @key
-
-			if @header.initialization_vector
-				@log.debug "Using initialization vector: #{@header.initialization_vector}"
-				@cipher.iv = @header.initialization_vector.unbase64
-			end
-		end
-
-		fail 'no sink' unless @sink
-		fail 'bad header' unless @cipher
-
-		@sink.call @cipher.update(data)
-	end
-
-	def each(&sink)
-		@sink = sink
-	end
-
-	def decrypt
-		yield self
-		@sink.call @cipher.final if @cipher
-	end
-end
-
 unless settings.password
 	settings.password = Haddock::Password.generate
 	log.info "Using password: #{settings.password}"
@@ -227,27 +123,58 @@ options[:initialization_vector] = settings.initialization_vector.ljust(16) if se
 key = Key.new(settings.password, settings.password_digest)
 
 unless settings.decrypt
-	e = Encrypter.new(settings.openssl_cipher.cipher, settings.openssl_cipher.mode, settings.openssl_cipher.key_length, key, options)
+	encrypter = Encrypter.new(settings.cipher_selector, key, options)
 
-	e.each do |encrypted_data_chunk|
-		print encrypted_data_chunk
+	Envelope::SDL.new do
+		cipher settings.cipher_selector.cipher
+		mode settings.cipher_selector.mode
+		key_length settings.cipher_selector.key_length if settings.cipher_selector.key_length
+		initialization_vector encrypter.initialization_vector.base64
 	end
-
-	e.encrypt do |e|
-		while data = settings.stdin.read(settings.in_block_size)
-			e << data
+	.each do |message_data|
+		print message_data
+	end
+	.body do |envelope_sink|
+		encrypter.each do |encrypted_data|
+			envelope_sink << encrypted_data
+		end
+		.process do |encrypter_sink|
+			while data = settings.stdin.read(settings.in_block_size)
+				encrypter_sink << data
+			end
 		end
 	end
 else
-	d = Decrypter.new(key, options)
+	decrypter_fiber = nil
 
-	d.each do |decrypted_data_chunk|
-		print decrypted_data_chunk
+	Envelope::SDL::Loader.new
+	.on_header do |header|
+		cipher_selector = CipherSelector.new
+			.cipher(header.cipher)
+			.mode(header.mode)
+			.key_length(header.key_length)
+
+		decrypter_fiber = Fiber.new do
+			Decrypter.new(cipher_selector, key, header.initialization_vector.unbase64, options).each do |data|
+				print data
+			end
+			.process do |decrypter_sink|
+				while encrypted_data = Fiber.yield do
+					decrypter_sink << encrypted_data
+				end
+			end
+		end
+		decrypter_fiber.resume # start fiber
 	end
-
-	d.decrypt do |d|
-		while data = settings.stdin.read(settings.in_block_size)
-			d << data
+	.on_body do |encrypted_data|
+		decrypter_fiber.resume encrypted_data
+	end
+	.on_end do
+		decrypter_fiber.resume nil
+	end
+	.load do |envelope_sink|
+		while message_data = settings.stdin.read(settings.in_block_size)
+			envelope_sink << message_data
 		end
 	end
 end

@@ -8,9 +8,12 @@ describe Envelope::SDL do
 			cipher 'AES'
 			mode 'CBC'
 			key_length 128
-		end.each do |data|
+			initialization_vector 'abc'
+		end
+		.each do |data|
 			message << data
-		end.body do |sink|
+		end
+		.body do |sink|
 			4.times do
 				sink << 'test'
 			end
@@ -20,6 +23,7 @@ describe Envelope::SDL do
 cipher "AES"
 mode "CBC"
 key_length 128
+initialization_vector "abc"
 
 testtesttesttest
 EOF
@@ -32,6 +36,7 @@ EOF
 cipher "AES"
 mode "CBC"
 key_length 128
+initialization_vector "abc"
 
 testtesttesttest
 
@@ -58,6 +63,7 @@ EOF
 		header.cipher.should == 'AES'
 		header.mode.should == 'CBC'
 		header.key_length.should == 128
+		header.initialization_vector.should == 'abc'
 		body.should == "testtesttesttest\n\nhello."
 	end
 end
