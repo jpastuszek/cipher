@@ -121,61 +121,8 @@ options[:initialization_vector] = settings.initialization_vector.ljust(16) if se
 key = Key.new(settings.password, settings.password_digest)
 
 unless settings.decrypt
-	encrypter = Encrypter.new(settings.cipher_selector, key, options)
-
-	Envelope::SDL.new do
-		cipher settings.cipher_selector.cipher
-		mode settings.cipher_selector.mode
-		key_length settings.cipher_selector.key_length if settings.cipher_selector.key_length
-		initialization_vector encrypter.initialization_vector.base64
-	end
-	.each do |message_data|
-		print message_data
-	end
-	.body do |envelope_sink|
-		encrypter
-		.each do |encrypted_data|
-			envelope_sink << encrypted_data
-		end
-		.process do |encrypter_sink|
-			while data = settings.stdin.read(settings.in_block_size)
-				encrypter_sink << data
-			end
-		end
-	end
+	IOEncrypter.new(settings.stdin, STDOUT, settings.cipher_selector, key, options)
 else
-	decrypter_fiber = nil
-
-	Envelope::SDL::Loader.new
-	.on_header do |header|
-		cipher_selector = CipherSelector.new
-			.cipher(header.cipher)
-			.mode(header.mode)
-			.key_length(header.key_length)
-
-		decrypter_fiber = Fiber.new do
-			Decrypter.new(cipher_selector, key, header.initialization_vector.unbase64, options)
-			.each do |data|
-				print data
-			end
-			.process do |decrypter_sink|
-				while encrypted_data = Fiber.yield do
-					decrypter_sink << encrypted_data
-				end
-			end
-		end
-		decrypter_fiber.resume # start fiber
-	end
-	.on_body do |encrypted_data|
-		decrypter_fiber.resume encrypted_data
-	end
-	.on_end do
-		decrypter_fiber.resume nil
-	end
-	.load do |envelope_sink|
-		while message_data = settings.stdin.read(settings.in_block_size)
-			envelope_sink << message_data
-		end
-	end
+	IODecrypter.new(settings.stdin, STDOUT, key, options)
 end
 
