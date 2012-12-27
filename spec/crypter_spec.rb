@@ -19,7 +19,7 @@ describe Encrypter do
 			end
 		end
 
-		encrypted.base64.should == 'KVbwK9Xp3EKIRvkg4+eudG1FCe2vK1jp1dp8Jb0eUeicVe5Bdne31afl5Z6khytT7HCsghF1S8CYWiukCeSYgzt2G8pie35ecVj1g4NvSgTl1ns0mTkTBUKDEHcEVL57'
+		encrypted.to_base64.should == 'KVbwK9Xp3EKIRvkg4+eudG1FCe2vK1jp1dp8Jb0eUeicVe5Bdne31afl5Z6khytT7HCsghF1S8CYWiukCeSYgzt2G8pie35ecVj1g4NvSgTl1ns0mTkTBUKDEHcEVL57'
 	end
 
 	it 'should provide initialization vector used' do
@@ -44,7 +44,7 @@ describe Encrypter do
 			end
 		end
 
-		encrypted.base64.should == 'NVh81Aq0+TixCzB77Pp3gXiov1nuaexLKJzKS3iOe9SGHzfY0kHfvANM5MTB5wpfPvB0ZHo6Jup9zp8el92UNp9m9a1+xLg6OgLj4bMYcynPg7sdem8nPQ=='
+		encrypted.to_base64.should == 'NVh81Aq0+TixCzB77Pp3gXiov1nuaexLKJzKS3iOe9SGHzfY0kHfvANM5MTB5wpfPvB0ZHo6Jup9zp8el92UNp9m9a1+xLg6OgLj4bMYcynPg7sdem8nPQ=='
 	end
 end
 
@@ -60,7 +60,7 @@ describe Decrypter do
 		end
 
 		subject.process do |sink|
-			sink << 'KVbwK9Xp3EKIRvkg4+eudG1FCe2vK1jp1dp8Jb0eUeicVe5Bdne31afl5Z6khytT7HCsghF1S8CYWiukCeSYgzt2G8pie35ecVj1g4NvSgTl1ns0mTkTBUKDEHcEVL57'.unbase64
+			sink << 'KVbwK9Xp3EKIRvkg4+eudG1FCe2vK1jp1dp8Jb0eUeicVe5Bdne31afl5Z6khytT7HCsghF1S8CYWiukCeSYgzt2G8pie35ecVj1g4NvSgTl1ns0mTkTBUKDEHcEVL57'.from_base64
 		end
 
 		decrypted.should == 'test' * 20
@@ -75,7 +75,7 @@ describe Decrypter do
 		end
 
 		subject.process do |sink|
-			sink << 'NVh81Aq0+TixCzB77Pp3gXiov1nuaexLKJzKS3iOe9SGHzfY0kHfvANM5MTB5wpfPvB0ZHo6Jup9zp8el92UNp9m9a1+xLg6OgLj4bMYcynPg7sdem8nPQ=='.unbase64
+			sink << 'NVh81Aq0+TixCzB77Pp3gXiov1nuaexLKJzKS3iOe9SGHzfY0kHfvANM5MTB5wpfPvB0ZHo6Jup9zp8el92UNp9m9a1+xLg6OgLj4bMYcynPg7sdem8nPQ=='.from_base64
 		end
 
 		decrypted.should == 'test' * 20

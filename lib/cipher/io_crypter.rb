@@ -20,8 +20,7 @@ class IOEncrypter
 			cipher cipher_selector.cipher
 			mode cipher_selector.mode
 			key_length cipher_selector.key_length if cipher_selector.key_length
-			# TODO: move base64 to envelope
-			initialization_vector initialization_vector.base64
+			initialization_vector initialization_vector
 		end
 		.each do |message_data|
 			output.write message_data
@@ -57,7 +56,7 @@ class IODecrypter
 				.key_length(header.key_length)
 
 			decrypter_fiber = Fiber.new do
-				Decrypter.new(cipher_selector, key, header.initialization_vector.unbase64, options)
+				Decrypter.new(cipher_selector, key, header.initialization_vector, options)
 				.each do |data|
 					output.write data
 				end

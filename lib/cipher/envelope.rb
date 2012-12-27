@@ -1,4 +1,5 @@
 require 'sdl4r'
+require_relative 'string_hex'
 
 class Envelope
 	class Sink
@@ -33,7 +34,7 @@ class Envelope
 			end
 
 			def initialization_vector(v)
-				@header[:initialization_vector] = v
+				@header[:initialization_vector] = v.to_hex
 			end
 		end
 
@@ -76,7 +77,11 @@ class Envelope
 						header_data << data
 						if header_data.include? "\n\n"
 							header, data = header_data.split("\n\n", 2)
-							@on_header.call(SDL4R.load(header)) if @on_header
+
+							header = SDL4R.load(header)
+							header.initialization_vector = header.initialization_vector.from_hex if header.initialization_vector
+
+							@on_header.call(header) if @on_header
 							@on_body.call(data) if @on_body
 						end
 					else

@@ -1,5 +1,5 @@
 require 'logger'
-require_relative 'string_base64'
+require_relative 'string_hex'
 
 class Crypter
 	class Processor
@@ -31,16 +31,16 @@ class Crypter
 			@cipher.key_len = @cipher_selector.key_length / 8
 		end
 
-		@log.debug "Using key: #{key.base64}"
+		@log.debug "Using key: #{key.to_hex}"
 		@cipher.key = key
 
 		if options[:initialization_vector]
 			@initialization_vector = options[:initialization_vector]
 			@cipher.iv = @initialization_vector 
-			@log.debug "Using initialization vector: #{@initialization_vector.base64}"
+			@log.debug "Using initialization vector: #{@initialization_vector.to_hex}"
 		else
 			@initialization_vector = @cipher.random_iv
-			@log.debug "Using generated initialization vector: #{@initialization_vector.base64}"
+			@log.debug "Using generated initialization vector: #{@initialization_vector.to_hex}"
 		end
 	end
 

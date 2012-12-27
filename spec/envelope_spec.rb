@@ -23,7 +23,7 @@ describe Envelope::SDL do
 cipher "AES"
 mode "CBC"
 key_length 128
-initialization_vector "abc"
+initialization_vector "616263"
 
 testtesttesttest
 EOF
@@ -36,7 +36,7 @@ EOF
 cipher "AES"
 mode "CBC"
 key_length 128
-initialization_vector "abc"
+initialization_vector "616263"
 
 testtesttesttest
 
