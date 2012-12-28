@@ -46,6 +46,42 @@ describe Encrypter do
 
 		encrypted.to_base64.should == 'NVh81Aq0+TixCzB77Pp3gXiov1nuaexLKJzKS3iOe9SGHzfY0kHfvANM5MTB5wpfPvB0ZHo6Jup9zp8el92UNp9m9a1+xLg6OgLj4bMYcynPg7sdem8nPQ=='
 	end
+
+	it 'should encrypt with padding' do
+		subject = Encrypter.new(CipherSelector.new.cipher('AES').mode('CBC').key_length(128), 'k' * 16, initialization_vector: 'iv' * 8, log: log)
+
+		encrypted = ''
+
+		subject.each do |data|
+			encrypted << data
+		end
+
+		subject.process do |sink|
+			4.times do
+				sink << 'a' * 16
+			end
+		end
+
+		encrypted.length.should > 4 * 16
+	end
+
+	it 'should allow disabling of padding' do
+		subject = Encrypter.new(CipherSelector.new.cipher('AES').mode('CBC').key_length(128), 'k' * 16, initialization_vector: 'iv' * 8, padding: false, log: log)
+
+		encrypted = ''
+
+		subject.each do |data|
+			encrypted << data
+		end
+
+		subject.process do |sink|
+			4.times do
+				sink << 'a' * 16
+			end
+		end
+
+		encrypted.length.should == 4 * 16
+	end
 end
 
 describe Decrypter do
@@ -79,6 +115,21 @@ describe Decrypter do
 		end
 
 		decrypted.should == 'test' * 20
+	end
+
+	it 'should decrypt message without padding when padding is disabled' do
+		subject = Decrypter.new(CipherSelector.new.cipher('AES').mode('CBC').key_length(128), 'k' * 16, 'iv' * 8, padding: false, log: log)
+
+		decrypted = ''
+		subject.each do |data|
+			decrypted << data
+		end
+
+		subject.process do |sink|
+			sink << "m10dFkVinkrM6fI/JLSMMSvAaf399xYIYbvNe0MY5CKGm6BBOoWh0ZlG5MBgT+ZpEtOOD0IGyOY3U2k2vFTrhw==".from_base64
+		end
+
+		decrypted.should == 'a' * 4 * 16
 	end
 end
 

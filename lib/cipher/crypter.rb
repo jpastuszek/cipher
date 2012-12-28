@@ -42,6 +42,10 @@ class Crypter
 			@initialization_vector = @cipher.random_iv
 			@log.debug "Using generated initialization vector: #{@initialization_vector.to_hex}"
 		end
+
+		if options.include? :padding
+			@cipher.padding = options[:padding] ? 1 : 0
+		end
 	end
 
 	attr_reader :initialization_vector
