@@ -1,10 +1,8 @@
 require_relative '../lib/cipher/crypter'
 
-log = Logger.new('test.log')
-
 describe Encrypter do
 	subject do
-		Encrypter.new(CipherSelector.new.cipher('AES').mode('CBC').key_length(128), 'k' * 16, initialization_vector: 'iv' * 8, log: log)
+		Encrypter.new(CipherSelector.new.cipher('AES').mode('CBC').key_length(128), 'k' * 16, initialization_vector: 'iv' * 8)
 	end
 
 	it 'should encrypt data stream with given cipher specs and key' do
@@ -27,15 +25,15 @@ describe Encrypter do
 	end
 
 	it 'should provide random initialization vector if not specified' do
-		Encrypter.new(CipherSelector.new.cipher('AES').mode('CBC').key_length(128), 'k' * 16, log: log).initialization_vector.length.should == 16
+		Encrypter.new(CipherSelector.new.cipher('AES').mode('CBC').key_length(128), 'k' * 16).initialization_vector.length.should == 16
 	end
 
 	it 'should provide nil initialization vector if not needed' do
-		Encrypter.new(CipherSelector.new.cipher('AES').mode('ECB').key_length(128), 'k' * 16, log: log).initialization_vector.should be_nil
+		Encrypter.new(CipherSelector.new.cipher('AES').mode('ECB').key_length(128), 'k' * 16).initialization_vector.should be_nil
 	end
 
 	it 'should work with custom key length' do
-		subject = Encrypter.new(CipherSelector.new.cipher('BF').mode('CBC').key_length(64), 'k' * 16, initialization_vector: 'iv' * 8, log: log)
+		subject = Encrypter.new(CipherSelector.new.cipher('BF').mode('CBC').key_length(64), 'k' * 16, initialization_vector: 'iv' * 8)
 
 		encrypted = ''
 		subject.each do |data|
@@ -52,7 +50,7 @@ describe Encrypter do
 	end
 
 	it 'should encrypt with padding' do
-		subject = Encrypter.new(CipherSelector.new.cipher('AES').mode('CBC').key_length(128), 'k' * 16, initialization_vector: 'iv' * 8, log: log)
+		subject = Encrypter.new(CipherSelector.new.cipher('AES').mode('CBC').key_length(128), 'k' * 16, initialization_vector: 'iv' * 8)
 
 		encrypted = ''
 
@@ -70,7 +68,7 @@ describe Encrypter do
 	end
 
 	it 'should allow disabling of padding' do
-		subject = Encrypter.new(CipherSelector.new.cipher('AES').mode('CBC').key_length(128), 'k' * 16, initialization_vector: 'iv' * 8, padding: false, log: log)
+		subject = Encrypter.new(CipherSelector.new.cipher('AES').mode('CBC').key_length(128), 'k' * 16, initialization_vector: 'iv' * 8, padding: false)
 
 		encrypted = ''
 
@@ -90,7 +88,7 @@ end
 
 describe Decrypter do
 	subject do
-		Decrypter.new(CipherSelector.new.cipher('AES').mode('CBC').key_length(128), 'k' * 16, initialization_vector: 'iv' * 8, log: log)
+		Decrypter.new(CipherSelector.new.cipher('AES').mode('CBC').key_length(128), 'k' * 16, initialization_vector: 'iv' * 8)
 	end
 
 	it 'should decrypt data stream' do
@@ -107,7 +105,7 @@ describe Decrypter do
 	end
 
 	it 'should work with custom key length' do
-		subject = Decrypter.new(CipherSelector.new.cipher('BF').mode('CBC').key_length(64), 'k' * 16, initialization_vector: 'iv' * 8, log: log)
+		subject = Decrypter.new(CipherSelector.new.cipher('BF').mode('CBC').key_length(64), 'k' * 16, initialization_vector: 'iv' * 8)
 
 		decrypted = ''
 		subject.each do |data|
@@ -122,7 +120,7 @@ describe Decrypter do
 	end
 
 	it 'should decrypt message without padding when padding is disabled' do
-		subject = Decrypter.new(CipherSelector.new.cipher('AES').mode('CBC').key_length(128), 'k' * 16, initialization_vector: 'iv' * 8, padding: false, log: log)
+		subject = Decrypter.new(CipherSelector.new.cipher('AES').mode('CBC').key_length(128), 'k' * 16, initialization_vector: 'iv' * 8, padding: false)
 
 		decrypted = ''
 		subject.each do |data|

@@ -18,7 +18,7 @@ class Crypter
 	end
 
 	def initialize(cipher_selector, key, options = {})
-		@log = options[:log] || Logger.new(STDERR)
+		@log = options[:log] || Logger.new('out.log')
 		@cipher_selector = cipher_selector
 
 		@log.info "Using cipher: #{@cipher_selector.openssl_cipher_name}"
