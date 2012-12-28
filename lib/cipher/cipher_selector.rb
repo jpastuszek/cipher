@@ -1,34 +1,46 @@
 require 'openssl'
-require 'ostruct'
 
 class CipherInfo
-	def initialize(openssl_cipher_name, cipher, mode, key_length, need_key_length, need_initialization_vector)
-		@openssl_cipher_name = openssl_cipher_name
+	def initialize(cipher)
 		@cipher = cipher
+	end
+
+	attr_reader :cipher
+end
+
+class ModeInfo < CipherInfo
+	def initialize(cipher_info, mode, need_initialization_vector)
+		super(cipher_info.cipher)
 		@mode = mode
-		@key_length = key_length
-		@need_key_length = need_key_length
 		@need_initialization_vector = need_initialization_vector
 	end
 
-	attr_reader :openssl_cipher_name
-	attr_reader :cipher
 	attr_reader :mode
-	attr_reader :key_length
-
-	def need_key_length?
-		@need_key_length
-	end
 
 	def need_initialization_vector?
 		@need_initialization_vector
 	end
 end
 
+class CipherSelectorInfo < ModeInfo
+	def initialize(mode_info, openssl_cipher_name, key_length, need_key_length)
+		super(mode_info, mode_info.mode, mode_info.need_initialization_vector?)
+		@openssl_cipher_name = openssl_cipher_name
+		@key_length = key_length
+		@need_key_length = need_key_length
+	end
+
+	attr_reader :openssl_cipher_name
+	attr_reader :key_length
+
+	def need_key_length?
+		@need_key_length
+	end
+end
+
 class CipherSelector
 	def initialize
 		@cipher_tree = build_cipher_tree
-		@cipher_info = OpenStruct.new
 	end
 
 	def ciphers
@@ -37,8 +49,7 @@ class CipherSelector
 
 	def cipher(cipher)
 		mode_tree = @cipher_tree[cipher] or fail "unsupported cipher #{cipher}"
-		@cipher_info.cipher = cipher
-		ModeSelector.new(mode_tree, @cipher_info)
+		ModeSelector.new(cipher, mode_tree)
 	end
 
 	def flat_list
@@ -106,15 +117,10 @@ class CipherSelector
 	end
 end
 
-
-class ModeSelector
-	def initialize(mode_tree, cipher_info)
+class ModeSelector < CipherInfo
+	def initialize(cipher, mode_tree)
+		super cipher
 		@mode_tree = mode_tree
-		@cipher_info = cipher_info
-	end
-
-	def cipher
-		@cipher_info.cipher
 	end
 
 	def modes
@@ -122,10 +128,15 @@ class ModeSelector
 	end
 
 	def mode(mode)
-		key_length_tree = @mode_tree[mode] or fail "unsupported mode #{mode} for cipher #{@cipher_info.cipher}"
-		@cipher_info.mode = mode
-		@cipher_info.need_initialization_vector = mode == 'ECB' ? false : true
-		KeyLengthSelector.new(key_length_tree, @cipher_info)
+		key_length_tree = @mode_tree[mode] or fail "unsupported mode #{mode} for cipher #{self.cipher}"
+		need_initialization_vector = 
+		if mode == 'ECB'
+			false
+		else
+			true
+		end
+
+		KeyLengthSelector.new(self, mode, need_initialization_vector, key_length_tree)
 	end
 
 	def preferred_mode(mode)
@@ -137,18 +148,10 @@ class ModeSelector
 	end
 end
 
-class KeyLengthSelector
-	def initialize(key_length_tree, cipher_info)
+class KeyLengthSelector < ModeInfo
+	def initialize(cipher_info, mode, need_initialization_vector, key_length_tree)
+		super cipher_info, mode, need_initialization_vector
 		@key_length_tree = key_length_tree
-		@cipher_info = cipher_info
-	end
-
-	def cipher
-		@cipher_info.cipher
-	end
-
-	def mode
-		@cipher_info.mode
 	end
 
 	def key_lengths
@@ -157,27 +160,15 @@ class KeyLengthSelector
 
 	def key_length(key_length)
 		if key_lengths.include? :not_available
-			fail "cipher #{@cipher_info.cipher} does not support key length selection" if key_length
-			@cipher_info.openssl_cipher_name = @key_length_tree[:not_available]
+			fail "cipher #{self.cipher} does not support key length selection" if key_length
+			CipherSelectorInfo.new(self, @key_length_tree[:not_available], nil, false)
 		elsif @key_length_tree.include? key_length
-			@cipher_info.key_length = key_length
-			@cipher_info.openssl_cipher_name = @key_length_tree[key_length]
+			CipherSelectorInfo.new(self, @key_length_tree[key_length], key_length, false)
 		elsif @key_length_tree.include? :custom
-			@cipher_info.key_length = key_length
-			@cipher_info.need_key_length = true
-			@cipher_info.openssl_cipher_name = @key_length_tree[:custom]
+			CipherSelectorInfo.new(self, @key_length_tree[:custom], key_length, true)
 		else
-			fail "unsupported key length #{key_length} for mode #{@cipher_info.mode} for cipher #{@cipher_info.cipher}"
+			fail "unsupported key length #{key_length} for mode #{self.mode} for cipher #{self.cipher}"
 		end
-
-		CipherInfo.new(
-			@cipher_info.openssl_cipher_name, 
-			@cipher_info.cipher, 
-			@cipher_info.mode, 
-			@cipher_info.key_length, 
-			@cipher_info.need_key_length,
-			@cipher_info.need_initialization_vector
-		)
 	end
 
 	def longest_key(custom_key_length = 256)
