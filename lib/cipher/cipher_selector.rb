@@ -2,12 +2,13 @@ require 'openssl'
 require 'ostruct'
 
 class CipherInfo
-	def initialize(openssl_cipher_name, cipher, mode, key_length, need_key_length)
+	def initialize(openssl_cipher_name, cipher, mode, key_length, need_key_length, need_initialization_vector)
 		@openssl_cipher_name = openssl_cipher_name
 		@cipher = cipher
 		@mode = mode
 		@key_length = key_length
 		@need_key_length = need_key_length
+		@need_initialization_vector = need_initialization_vector
 	end
 
 	attr_reader :openssl_cipher_name
@@ -17,6 +18,10 @@ class CipherInfo
 
 	def need_key_length?
 		@need_key_length
+	end
+
+	def need_initialization_vector?
+		@need_initialization_vector
 	end
 end
 
@@ -119,6 +124,7 @@ class ModeSelector
 	def mode(mode)
 		key_length_tree = @mode_tree[mode] or fail "unsupported mode #{mode} for cipher #{@cipher_info.cipher}"
 		@cipher_info.mode = mode
+		@cipher_info.need_initialization_vector = mode == 'ECB' ? false : true
 		KeyLengthSelector.new(key_length_tree, @cipher_info)
 	end
 
@@ -169,7 +175,8 @@ class KeyLengthSelector
 			@cipher_info.cipher, 
 			@cipher_info.mode, 
 			@cipher_info.key_length, 
-			@cipher_info.need_key_length
+			@cipher_info.need_key_length,
+			@cipher_info.need_initialization_vector
 		)
 	end
 

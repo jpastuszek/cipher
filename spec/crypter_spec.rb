@@ -30,6 +30,10 @@ describe Encrypter do
 		Encrypter.new(CipherSelector.new.cipher('AES').mode('CBC').key_length(128), 'k' * 16, log: log).initialization_vector.length.should == 16
 	end
 
+	it 'should provide nil initialization vector if not needed' do
+		Encrypter.new(CipherSelector.new.cipher('AES').mode('ECB').key_length(128), 'k' * 16, log: log).initialization_vector.should be_nil
+	end
+
 	it 'should work with custom key length' do
 		subject = Encrypter.new(CipherSelector.new.cipher('BF').mode('CBC').key_length(64), 'k' * 16, initialization_vector: 'iv' * 8, log: log)
 

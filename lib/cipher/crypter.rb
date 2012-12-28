@@ -26,7 +26,7 @@ class Crypter
 
 		yield @cipher
 
-		if @cipher_selector.need_key_length_set?
+		if @cipher_selector.need_key_length?
 			@log.info "Using key length: #{@cipher_selector.key_length}"
 			@cipher.key_len = @cipher_selector.key_length / 8
 		end
@@ -34,13 +34,15 @@ class Crypter
 		@log.debug "Using key: #{key.to_hex}"
 		@cipher.key = key
 
-		if options[:initialization_vector]
-			@initialization_vector = options[:initialization_vector]
-			@cipher.iv = @initialization_vector 
-			@log.debug "Using initialization vector: #{@initialization_vector.to_hex}"
-		else
-			@initialization_vector = @cipher.random_iv
-			@log.debug "Using generated initialization vector: #{@initialization_vector.to_hex}"
+		if @cipher_selector.need_initialization_vector?
+			if options[:initialization_vector]
+				@initialization_vector = options[:initialization_vector]
+				@cipher.iv = @initialization_vector 
+				@log.debug "Using initialization vector: #{@initialization_vector.to_hex}"
+			else
+				@initialization_vector = @cipher.random_iv
+				@log.debug "Using generated initialization vector: #{@initialization_vector.to_hex}"
+			end
 		end
 
 		if options.include? :padding

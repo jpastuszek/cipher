@@ -13,6 +13,7 @@ class IOEncrypter
 		if options.include? initialization_vector
 			options[:initialization_vector]
 		else
+			# may be nil if not needed
 			encrypter.initialization_vector
 		end
 
@@ -20,7 +21,7 @@ class IOEncrypter
 			cipher cipher_selector.cipher
 			mode cipher_selector.mode
 			key_length cipher_selector.key_length if cipher_selector.key_length
-			initialization_vector initialization_vector
+			initialization_vector initialization_vector if initialization_vector
 		end
 		.each do |message_data|
 			output.write message_data
