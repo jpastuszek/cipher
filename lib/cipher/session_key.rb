@@ -14,7 +14,7 @@ class SessionKey < String
 		session_key = ''
 
 		# setting iv since ECB may not be available for all ciphers
-		Decrypter.new(key_cipher, password_digest, encrypted_session_key, padding: false)
+		Decrypter.new(key_cipher, password_digest, initialization_vector: encrypted_session_key, padding: false)
 		.each do |out|
 			session_key << out
 			return session_key if session_key.length >= encrypted_session_key.length

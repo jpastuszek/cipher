@@ -72,8 +72,7 @@ class Encrypter < Crypter
 end
 
 class Decrypter < Crypter
-	def initialize(cipher_selector, key, initialization_vector, options = {})
-		options = options.merge(initialization_vector: initialization_vector)
+	def initialize(cipher_selector, key, options = {})
 		super(cipher_selector, key, options) do |cipher|
 			cipher.decrypt
 		end

@@ -57,7 +57,7 @@ class IODecrypter
 				.key_length(header.key_length)
 
 			decrypter_fiber = Fiber.new do
-				Decrypter.new(cipher_selector, key, header.initialization_vector, options)
+				Decrypter.new(cipher_selector, key, options.merge(initialization_vector: header.initialization_vector))
 				.each do |data|
 					output.write data
 				end

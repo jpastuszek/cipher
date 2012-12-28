@@ -90,10 +90,10 @@ end
 
 describe Decrypter do
 	subject do
-		Decrypter.new(CipherSelector.new.cipher('AES').mode('CBC').key_length(128), 'k' * 16, 'iv' * 8, log: log)
+		Decrypter.new(CipherSelector.new.cipher('AES').mode('CBC').key_length(128), 'k' * 16, initialization_vector: 'iv' * 8, log: log)
 	end
 
-	it 'should decrypt data stream with given cipher specs, key and initialization vector' do
+	it 'should decrypt data stream' do
 		decrypted = ''
 		subject.each do |data|
 			decrypted << data
@@ -107,7 +107,7 @@ describe Decrypter do
 	end
 
 	it 'should work with custom key length' do
-		subject = Decrypter.new(CipherSelector.new.cipher('BF').mode('CBC').key_length(64), 'k' * 16, 'iv' * 8, log: log)
+		subject = Decrypter.new(CipherSelector.new.cipher('BF').mode('CBC').key_length(64), 'k' * 16, initialization_vector: 'iv' * 8, log: log)
 
 		decrypted = ''
 		subject.each do |data|
@@ -122,7 +122,7 @@ describe Decrypter do
 	end
 
 	it 'should decrypt message without padding when padding is disabled' do
-		subject = Decrypter.new(CipherSelector.new.cipher('AES').mode('CBC').key_length(128), 'k' * 16, 'iv' * 8, padding: false, log: log)
+		subject = Decrypter.new(CipherSelector.new.cipher('AES').mode('CBC').key_length(128), 'k' * 16, initialization_vector: 'iv' * 8, padding: false, log: log)
 
 		decrypted = ''
 		subject.each do |data|
