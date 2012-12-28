@@ -1,95 +1,29 @@
 require 'openssl'
+require 'ostruct'
 
-class CipherSelector
-	class ModeSelector
-		class KeyLengthSelector
-			class Cipher
-				def initialize(openssl_cipher_name, cipher, mode, key_length, need_key_length_set = false)
-					@openssl_cipher_name = openssl_cipher_name
-					@cipher = cipher
-					@mode = mode
-					@key_length = key_length
-					@need_key_length_set = need_key_length_set
-				end
-
-				attr_reader :openssl_cipher_name
-				attr_reader :cipher
-				attr_reader :mode
-				attr_reader :key_length
-
-				def need_key_length_set?
-					@need_key_length_set
-				end
-			end
-
-			def initialize(key_length_tree, cipher, mode)
-				@key_length_tree = key_length_tree
-				@cipher = cipher
-				@mode = mode
-			end
-
-			attr_reader :cipher
-			attr_reader :mode
-
-			def key_lengths
-				@key_length_tree.keys
-			end
-
-			def key_length(key_length)
-				if key_lengths.include? :not_available
-					fail "cipher #@cipher does not support key length selection" if key_length
-					Cipher.new(@key_length_tree[:not_available], @cipher, @mode, nil)
-				elsif @key_length_tree.include? key_length
-					Cipher.new(@key_length_tree[key_length], @cipher, @mode, key_length)
-				elsif @key_length_tree.include? :custom
-					Cipher.new(@key_length_tree[:custom], @cipher, @mode, key_length, true)
-				else
-					fail "unsupported key length #{key_length} for mode #{@mode} for cipher #{@cipher}"
-				end
-			end
-
-			def longest_key(custom_key_length = 256)
-				longest = key_lengths.select{|k| k.is_a? Numeric}.sort.last
-				if longest
-					key_length(longest)
-				else	 
-					if key_lengths.include? :not_available
-						# cannot use key length with this algorithm
-						key_length(nil)
-					else
-						key_length(custom_key_length)
-					end
-				end
-			end
-		end
-
-		def initialize(mode_tree, cipher)
-			@mode_tree = mode_tree
-			@cipher = cipher
-		end
-
-		attr_reader :cipher
-
-		def modes
-			@mode_tree.keys
-		end
-
-		def mode(mode)
-			key_length_tree = @mode_tree[mode] or fail "unsupported mode #{mode} for cipher #{@cipher}"
-			KeyLengthSelector.new(key_length_tree, @cipher, mode)
-		end
-
-		def preferred_mode(mode)
-			if modes.include? mode
-				mode(mode)
-			else
-				mode('none')
-			end
-		end
+class CipherInfo
+	def initialize(openssl_cipher_name, cipher, mode, key_length, need_key_length)
+		@openssl_cipher_name = openssl_cipher_name
+		@cipher = cipher
+		@mode = mode
+		@key_length = key_length
+		@need_key_length = need_key_length
 	end
 
+	attr_reader :openssl_cipher_name
+	attr_reader :cipher
+	attr_reader :mode
+	attr_reader :key_length
+
+	def need_key_length?
+		@need_key_length
+	end
+end
+
+class CipherSelector
 	def initialize
 		@cipher_tree = build_cipher_tree
+		@cipher_info = OpenStruct.new
 	end
 
 	def ciphers
@@ -98,7 +32,8 @@ class CipherSelector
 
 	def cipher(cipher)
 		mode_tree = @cipher_tree[cipher] or fail "unsupported cipher #{cipher}"
-		ModeSelector.new(mode_tree, cipher)
+		@cipher_info.cipher = cipher
+		ModeSelector.new(mode_tree, @cipher_info)
 	end
 
 	def flat_list
@@ -163,6 +98,93 @@ class CipherSelector
 			((ciphers[cipher] ||= {})[mode] ||= {})[key_length] = c
 		end
 		ciphers
+	end
+end
+
+
+class ModeSelector
+	def initialize(mode_tree, cipher_info)
+		@mode_tree = mode_tree
+		@cipher_info = cipher_info
+	end
+
+	def cipher
+		@cipher_info.cipher
+	end
+
+	def modes
+		@mode_tree.keys
+	end
+
+	def mode(mode)
+		key_length_tree = @mode_tree[mode] or fail "unsupported mode #{mode} for cipher #{@cipher_info.cipher}"
+		@cipher_info.mode = mode
+		KeyLengthSelector.new(key_length_tree, @cipher_info)
+	end
+
+	def preferred_mode(mode)
+		if modes.include? mode
+			mode(mode)
+		else
+			mode('none')
+		end
+	end
+end
+
+class KeyLengthSelector
+	def initialize(key_length_tree, cipher_info)
+		@key_length_tree = key_length_tree
+		@cipher_info = cipher_info
+	end
+
+	def cipher
+		@cipher_info.cipher
+	end
+
+	def mode
+		@cipher_info.mode
+	end
+
+	def key_lengths
+		@key_length_tree.keys
+	end
+
+	def key_length(key_length)
+		if key_lengths.include? :not_available
+			fail "cipher #{@cipher_info.cipher} does not support key length selection" if key_length
+			@cipher_info.openssl_cipher_name = @key_length_tree[:not_available]
+		elsif @key_length_tree.include? key_length
+			@cipher_info.key_length = key_length
+			@cipher_info.openssl_cipher_name = @key_length_tree[key_length]
+		elsif @key_length_tree.include? :custom
+			@cipher_info.key_length = key_length
+			@cipher_info.need_key_length = true
+			@cipher_info.openssl_cipher_name = @key_length_tree[:custom]
+		else
+			fail "unsupported key length #{key_length} for mode #{@cipher_info.mode} for cipher #{@cipher_info.cipher}"
+		end
+
+		CipherInfo.new(
+			@cipher_info.openssl_cipher_name, 
+			@cipher_info.cipher, 
+			@cipher_info.mode, 
+			@cipher_info.key_length, 
+			@cipher_info.need_key_length
+		)
+	end
+
+	def longest_key(custom_key_length = 256)
+		longest = key_lengths.select{|k| k.is_a? Numeric}.sort.last
+		if longest
+			key_length(longest)
+		else	 
+			if key_lengths.include? :not_available
+				# cannot use key length with this algorithm
+				key_length(nil)
+			else
+				key_length(custom_key_length)
+			end
+		end
 	end
 end
 
