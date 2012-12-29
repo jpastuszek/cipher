@@ -45,7 +45,7 @@ class Crypter
 			end
 		end
 
-		if options[:padding] 
+		if not options.include?(:padding) or options[:padding] 
 			@cipher.padding = 1
 			@log.debug "Padding enabled"
 		else
