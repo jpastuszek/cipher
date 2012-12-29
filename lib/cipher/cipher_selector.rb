@@ -3,9 +3,20 @@ require 'openssl'
 class CipherInfo
 	def initialize(cipher)
 		@cipher = cipher
+
+		# most ciphers have 64 bit block size
+		@block_sizes = Hash.new(64)
+		@block_sizes.merge!(
+			'AES' => 128,
+			'CAST5' => 128,
+		)
 	end
 
 	attr_reader :cipher
+
+	def block_size
+		@block_sizes[cipher]	
+	end
 end
 
 class ModeInfo < CipherInfo
@@ -104,12 +115,16 @@ class CipherSelector
 				else
 					#STDERR.puts "unsupported cipher alias: #{c}"
 			end
+
+			# Some found working values
+			key_length = 64 if cipher == 'DES'
+			key_length = 192 if cipher == 'DESX'
+			key_length = 128 if cipher == 'DES-EDE'
+			key_length = 192 if cipher == 'DES-EDE3'
+
 			#puts c
 			#puts "c: %s k: %s m: %s" % [cipher, key_length, mode]
-
-			# some algorithms does not support setting key sizes
-			key_length = :not_available if cipher =~ /^DES/
-			
+			#
 			# build nested hash
 			((ciphers[cipher] ||= {})[mode] ||= {})[key_length] = c
 		end

@@ -24,6 +24,12 @@ describe CipherSelector do
 		flat.should include ["AES", "CBC", 128]
 	end
 
+	it 'should privide block size' do
+		subject.cipher('AES').block_size.should == 128
+		subject.cipher('CAST5').block_size.should == 128
+		subject.cipher('DES').block_size.should == 64
+	end
+
 	describe ModeSelector do
 		subject do
 			CipherSelector.new.cipher('AES')
@@ -83,12 +89,6 @@ describe CipherSelector do
 			end.should raise_error RuntimeError, "unsupported key length 123 for mode CBC for cipher AES"
 		end
 
-		it 'should raise error if selecting key length is not supported' do
-			lambda do
-				CipherSelector.new.cipher('DES').mode('CBC').key_length(128)
-			end.should raise_error RuntimeError, "cipher DES does not support key length selection"
-		end
-
 		it 'should provide CipherInfo for given key length' do
 			subject.key_length(128).should be_a CipherInfo
 		end
@@ -113,12 +113,6 @@ describe CipherSelector do
 
 		it 'should support selecting longest available key length' do
 			subject.longest_key.openssl_cipher_name.should == 'AES256'
-		end
-
-		it '#longest_key should select nil key length for ciphers not supporting key lenghts' do
-			cipher = CipherSelector.new.cipher('DES').mode('CBC').longest_key
-			cipher.openssl_cipher_name.should == 'DES'
-			cipher.key_length.should be_nil
 		end
 
 		it '#longest_key should select longest predefined key length when custom key length is supported' do

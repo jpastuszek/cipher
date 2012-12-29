@@ -42,6 +42,10 @@ class Crypter
 			else
 				@initialization_vector = @cipher.random_iv
 				@log.debug "Using generated initialization vector: #{@initialization_vector.to_hex}"
+
+				if @initialization_vector.length * 8 != @cipher_selector.block_size
+					@log.warn "provided block size (#{@cipher_selector.block_size}) does not match generated initialization vector size (#{@initialization_vector.length * 8})"
+				end
 			end
 		end
 

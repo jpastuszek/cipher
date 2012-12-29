@@ -107,14 +107,14 @@ end.parse! do |settings|
 		key_length_selector.longest_key(256)
 	end
 
-	key_bytes_length = (cipher_selector.key_length.to_f / 8).ceil
-
+	block_length = (cipher_selector.block_size.to_f / 8).ceil
 	if settings.initialization_vector
-		settings.initialization_vector.length == key_bytes_length or fail "initialization vector should be #{key_bytes_length} characters long"
+		settings.initialization_vector.length == block_length or fail "initialization vector should be #{block_length} characters long"
 	end
 
+	key_length = (cipher_selector.key_length.to_f / 8).ceil
 	if settings.session_key
-		settings.session_key.length == key_bytes_length or fail "session key should be #{key_bytes_length} characters long"
+		settings.session_key.length == key_length or fail "session key should be #{key_length} characters long"
 	end
 
 	if not settings.password and settings.decrypt
@@ -126,7 +126,7 @@ end
 
 log = Logger.new(STDERR)
 log.formatter = proc do |severity, datetime, progname, msg|
-	  "#{settings.decrypt ? 'Decrypter' : 'Encrypter'}: #{severity == "ERROR" ? "Error: " : ''}#{msg}\n"
+	  "#{settings.decrypt ? 'Decrypter' : 'Encrypter'}: #{severity == "ERROR" ? "Error: " : ''}#{severity == "WARN" ? "Warning: " : ''}#{msg}\n"
 end
 log.level = Logger::WARN
 log.level = Logger::INFO if settings.verbose
