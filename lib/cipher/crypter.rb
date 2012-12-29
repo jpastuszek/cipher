@@ -25,7 +25,7 @@ class Crypter
 		@cipher = OpenSSL::Cipher::Cipher.new(@cipher_selector.openssl_cipher_name)
 
 		yield @cipher
-
+ 
 		if @cipher_selector.need_key_length?
 			@log.info "Using key length: #{@cipher_selector.key_length}"
 			@cipher.key_len = @cipher_selector.key_length / 8

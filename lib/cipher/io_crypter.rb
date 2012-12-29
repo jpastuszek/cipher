@@ -30,7 +30,7 @@ class IOEncrypter
 			mode cipher_selector.mode
 			key_length cipher_selector.key_length if cipher_selector.key_length
 			initialization_vector initialization_vector if initialization_vector
-			session_key key.encrypt(cipher_selector.cipher, password)
+			session_key key.encrypt(cipher_selector, password)
 		end
 		.output do |message_data|
 			output.write message_data
@@ -64,7 +64,7 @@ class IODecrypter
 				.cipher(header.cipher)
 				.mode(header.mode)
 				.key_length(header.key_length)
-			key = SessionKey.from_encrypted_session_key(header.cipher, password, header.session_key)
+			key = SessionKey.from_encrypted_session_key(cipher_selector, password, header.session_key)
 
 			decrypter_fiber = Fiber.new do
 				Decrypter.new(cipher_selector, key, options.merge(initialization_vector: header.initialization_vector))

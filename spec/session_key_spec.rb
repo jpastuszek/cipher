@@ -12,20 +12,38 @@ describe SessionKey do
 
 	it 'can be encrypted' do
 		session_key = SessionKey.generate(256)
-		
-		encrypted_session_key = session_key.encrypt('AES', 'test')
-		encrypted_session_key.should_not == session_key
-		encrypted_session_key.length.should == session_key.length
+		cipher_selector = CipherSelector.new.cipher('AES').mode('CBC').key_length(128)	
 
-		encrypted_session_key.should == session_key.encrypt('AES', 'test')
-		encrypted_session_key.should_not == session_key.encrypt('AES', 'test2')
+		encrypted_session_key = session_key.encrypt(cipher_selector, 'test')
+		encrypted_session_key.should_not == session_key
+
+		encrypted_session_key.should == session_key.encrypt(cipher_selector, 'test')
+		encrypted_session_key.should_not == session_key.encrypt(cipher_selector, 'test2')
+	end
+
+	it 'can be encrypted (192)' do
+		session_key = SessionKey.generate(192)
+		cipher_selector = CipherSelector.new.cipher('AES').mode('CBC').key_length(192)	
+		
+		encrypted_session_key = session_key.encrypt(cipher_selector, 'test')
+		encrypted_session_key.should_not == session_key
+
+		encrypted_session_key.should == session_key.encrypt(cipher_selector, 'test')
+		encrypted_session_key.should_not == session_key.encrypt(cipher_selector, 'test2')
 	end
 
 	it 'can be created from encrypted key' do
 		session_key = SessionKey.generate(256)
-		encrypted_session_key = session_key.encrypt('AES', 'test')
+		cipher_selector = CipherSelector.new.cipher('AES').mode('CBC').key_length(256)	
+		encrypted_session_key = session_key.encrypt(cipher_selector, 'test')
 
-		SessionKey.from_encrypted_session_key('AES', 'test', encrypted_session_key).should == session_key
+		SessionKey.from_encrypted_session_key(cipher_selector, 'test', encrypted_session_key).should == session_key
+
+		session_key = SessionKey.generate(192)
+		cipher_selector = CipherSelector.new.cipher('AES').mode('CBC').key_length(192)	
+		encrypted_session_key = session_key.encrypt(cipher_selector, 'test')
+
+		SessionKey.from_encrypted_session_key(cipher_selector, 'test', encrypted_session_key).should == session_key
 	end
 end
 
