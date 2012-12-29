@@ -1,8 +1,10 @@
 require_relative 'crypter'
 require_relative 'envelope'
+require_relative 'session_key'
 
 class IOEncrypter
-	def initialize(input, output, cipher_selector, key, options = {})
+	def initialize(input, output, cipher_selector, password, options = {})
+		key = SessionKey.generate(cipher_selector.key_length)
 		encrypter = Encrypter.new(cipher_selector, key, options)
 		options = { 
 			in_block_size: 1024*256,
@@ -22,6 +24,7 @@ class IOEncrypter
 			mode cipher_selector.mode
 			key_length cipher_selector.key_length if cipher_selector.key_length
 			initialization_vector initialization_vector if initialization_vector
+			session_key key.encrypt(cipher_selector.cipher, password)
 		end
 		.each do |message_data|
 			output.write message_data
@@ -41,7 +44,7 @@ class IOEncrypter
 end
 
 class IODecrypter
-	def initialize(input, output, key, options = {})
+	def initialize(input, output, password, options = {})
 		options = { 
 			in_block_size: 1024*256,
 			envelope_class: Envelope::SDL
@@ -55,6 +58,7 @@ class IODecrypter
 				.cipher(header.cipher)
 				.mode(header.mode)
 				.key_length(header.key_length)
+			key = SessionKey.from_encrypted_session_key(header.cipher, password, header.session_key)
 
 			decrypter_fiber = Fiber.new do
 				Decrypter.new(cipher_selector, key, options.merge(initialization_vector: header.initialization_vector))

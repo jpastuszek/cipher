@@ -29,10 +29,6 @@ settings = CLI.new do
 		short: :i,
 		description: 'initialization vector for CBC, CFB, OFB and CTR modes',
 		default_label: 'random'
-	option :password_digest,
-		short: :P,
-		description: 'digest to use to hash password for cipher key',
-		default: 'SHA256'
 	option :in_block_size,
 		description: 'input read block size',
 		default: 1024*256,
@@ -103,12 +99,6 @@ log.formatter = proc do |severity, datetime, progname, msg|
 	  "#{settings.decrypt ? 'D:' : 'E:'} #{msg}\n"
 end
 
-class Key < String
-	def initialize(password, password_digest)
-		super OpenSSL::Digest.new(password_digest).update(password).digest
-	end
-end
-
 unless settings.password
 	settings.password = Haddock::Password.generate
 	log.info "Using password: #{settings.password}"
@@ -118,11 +108,9 @@ options = {}
 options[:log] = log
 options[:initialization_vector] = settings.initialization_vector.ljust(16) if settings.initialization_vector
 
-key = Key.new(settings.password, settings.password_digest)
-
 unless settings.decrypt
-	IOEncrypter.new(settings.stdin, STDOUT, settings.cipher_selector, key, options)
+	IOEncrypter.new(settings.stdin, STDOUT, settings.cipher_selector, settings.password, options)
 else
-	IODecrypter.new(settings.stdin, STDOUT, key, options)
+	IODecrypter.new(settings.stdin, STDOUT, settings.password, options)
 end
 

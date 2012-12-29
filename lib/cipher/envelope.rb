@@ -36,6 +36,10 @@ class Envelope
 			def initialization_vector(v)
 				@header[:initialization_vector] = v.to_hex
 			end
+
+			def session_key(v)
+				@header[:session_key] = v.to_hex
+			end
 		end
 
 		def initialize(&header)
@@ -80,6 +84,7 @@ class Envelope
 
 							header = SDL4R.load(header)
 							header.initialization_vector = header.initialization_vector.from_hex if header.initialization_vector
+							header.session_key = header.session_key.from_hex if header.session_key
 
 							@on_header.call(header) if @on_header
 							@on_body.call(data) if @on_body
