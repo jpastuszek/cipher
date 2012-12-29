@@ -111,6 +111,10 @@ end.parse! do |settings|
 		settings.session_key.length == key_bytes_length or fail "session key should be #{key_bytes_length} characters long"
 	end
 
+	if not settings.password and settings.decrypt
+		fail 'please provide password with -p option'
+	end
+
 	settings.cipher_selector = cipher_selector
 end
 
