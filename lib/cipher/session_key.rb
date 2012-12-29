@@ -5,11 +5,12 @@ class SessionKey < String
 
 	def self.from_encrypted_session_key(cipher_selector, password, encrypted_session_key)
 		password_digest = OpenSSL::PKCS5.pbkdf2_hmac_sha1(password, 'salt', 2000, (cipher_selector.key_size.to_f / 8).ceil)
+		key_cipher_selector = CipherSelector.new.cipher(cipher_selector.cipher).preferred_mode('ECB').key_size(cipher_selector.key_size)
 
 		session_key = ''
 
 		# setting iv since ECB may not be available for all ciphers
-		Decrypter.new(cipher_selector, password_digest, initialization_vector: password_digest)
+		Decrypter.new(key_cipher_selector, password_digest, initialization_vector: password_digest)
 		.output do |out|
 			session_key << out
 		end
@@ -22,11 +23,12 @@ class SessionKey < String
 
 	def encrypt(cipher_selector, password)
 		password_digest = OpenSSL::PKCS5.pbkdf2_hmac_sha1(password, 'salt', 2000, (cipher_selector.key_size.to_f / 8).ceil)
+		key_cipher_selector = CipherSelector.new.cipher(cipher_selector.cipher).preferred_mode('ECB').key_size(cipher_selector.key_size)
 
 		session_key = ''
 
 		# setting iv since ECB may not be available for all ciphers
-		Encrypter.new(cipher_selector, password_digest, initialization_vector: password_digest)
+		Encrypter.new(key_cipher_selector, password_digest, initialization_vector: password_digest)
 		.output do |encrypted_session_key|
 			session_key << encrypted_session_key
 		end
