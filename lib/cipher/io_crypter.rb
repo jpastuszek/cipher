@@ -83,6 +83,7 @@ class IODecrypter
 			decrypter_fiber.resume encrypted_data
 		end
 		.on_end do
+			raise IOError, 'stream ended before header read' unless decrypter_fiber
 			decrypter_fiber.resume nil
 		end
 		.load do |envelope_sink|

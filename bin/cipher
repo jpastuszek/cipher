@@ -151,5 +151,8 @@ begin
 	end
 rescue => e
 	log.error "#{e.message} (#{e.class.name})"
+	e.backtrace.each do |line|
+		log.debug "#{e.class.name}: #{line}"
+	end
 end
 
