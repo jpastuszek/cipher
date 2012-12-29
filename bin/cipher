@@ -34,12 +34,13 @@ settings = CLI.new do
 		description: 'session key',
 		default_label: 'random'
 	option :in_block_size,
+		short: :b,
 		description: 'input read block size',
 		default: 1024*256,
 		cast: Integer
 	switch :list,
 		short: :L,
-		description: 'list all cipher, mode and key combinations'
+		description: 'list all cipher, mode and key length combinations'
 	switch :list_ciphers,
 		short: :C,
 		description: 'list ciphers'
@@ -52,6 +53,9 @@ settings = CLI.new do
 	switch :decrypt,
 		short: :d,
 		description: 'decrypt data'
+	switch :no_padding,
+		short: :P,
+		description: 'do not add/expect padding at the end of encrypted stream'
 end.parse! do |settings|
 	cipher_selector = CipherSelector.new
 
@@ -124,6 +128,7 @@ options = {}
 options[:log] = log
 options[:initialization_vector] = settings.initialization_vector if settings.initialization_vector
 options[:session_key] = settings.session_key if settings.session_key
+options[:padding] = ! settings.no_padding
 
 unless settings.decrypt
 	IOEncrypter.new(settings.stdin, STDOUT, settings.cipher_selector, settings.password, options)
