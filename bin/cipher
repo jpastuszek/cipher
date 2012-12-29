@@ -12,9 +12,9 @@ settings = CLI.new do
 		short: :c,
 		description: 'select cipher to use',
 		default: 'AES'
-	option :key_length,
+	option :key_size,
 		short: :k,
-		description: 'cipher key length in bits (rounded to multiple of 8)',
+		description: 'cipher key size in bits (rounded to multiple of 8)',
 		cast: Integer,
 		default_label: 'longest preset'
 	option :mode,
@@ -44,7 +44,7 @@ settings = CLI.new do
 	switch :list_ciphers,
 		short: :C,
 		description: 'list ciphers'
-	switch :list_key_lengths,
+	switch :list_key_sizes,
 		short: :K,
 		description: 'list available key lenghts for selected cipher'
 	switch :list_modes,
@@ -84,15 +84,15 @@ end.parse! do |settings|
 		exit
 	end
 
-	key_length_selector = 
+	key_size_selector = 
 	if settings.mode =~ /prefer (.+)/
 		mode_selctor.preferred_mode($1)
 	else
 		mode_selctor.mode(settings.mode)
 	end
 
-	if settings.list_key_lengths
-		STDERR.puts key_length_selector.key_lengths.sort{ |a, b|
+	if settings.list_key_sizes
+		STDERR.puts key_size_selector.key_sizes.sort{ |a, b|
 			next 1 if not a.is_a? Numeric
 			next -1 if not b.is_a? Numeric
 			a <=> b
@@ -101,10 +101,10 @@ end.parse! do |settings|
 	end
 
 	cipher_selector =
-	if settings.key_length
-		key_length_selector.key_length(settings.key_length.to_i)
+	if settings.key_size
+		key_size_selector.key_size(settings.key_size.to_i)
 	else
-		key_length_selector.longest_key(256)
+		key_size_selector.longest_key(256)
 	end
 
 	block_length = (cipher_selector.block_size.to_f / 8).ceil
@@ -112,7 +112,7 @@ end.parse! do |settings|
 		settings.initialization_vector.length == block_length or fail "initialization vector should be #{block_length} characters long"
 	end
 
-	key_length = (cipher_selector.key_length.to_f / 8).ceil
+	key_length = (cipher_selector.key_size.to_f / 8).ceil
 	if settings.session_key
 		settings.session_key.length == key_length or fail "session key should be #{key_length} characters long"
 	end

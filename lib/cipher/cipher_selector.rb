@@ -34,18 +34,18 @@ class ModeInfo < CipherInfo
 end
 
 class CipherSelectorInfo < ModeInfo
-	def initialize(mode_info, openssl_cipher_name, key_length, need_key_length)
+	def initialize(mode_info, openssl_cipher_name, key_size, need_key_size)
 		super(mode_info, mode_info.mode, mode_info.need_initialization_vector?)
 		@openssl_cipher_name = openssl_cipher_name
-		@key_length = key_length
-		@need_key_length = need_key_length
+		@key_size = key_size
+		@need_key_size = need_key_size
 	end
 
 	attr_reader :openssl_cipher_name
-	attr_reader :key_length
+	attr_reader :key_size
 
-	def need_key_length?
-		@need_key_length
+	def need_key_size?
+		@need_key_size
 	end
 end
 
@@ -102,7 +102,7 @@ class CipherSelector
 			a <=> b
 		end.uniq.map do |c|
 			# all variants of alias construction
-			cipher, key_length, mode = 
+			cipher, key_size, mode = 
 			case c
 				when lambda{|c| aliases.member? c}
 					aliases[c]
@@ -117,16 +117,16 @@ class CipherSelector
 			end
 
 			# Some found working values
-			key_length = 64 if cipher == 'DES'
-			key_length = 192 if cipher == 'DESX'
-			key_length = 128 if cipher == 'DES-EDE'
-			key_length = 192 if cipher == 'DES-EDE3'
+			key_size = 64 if cipher == 'DES'
+			key_size = 192 if cipher == 'DESX'
+			key_size = 128 if cipher == 'DES-EDE'
+			key_size = 192 if cipher == 'DES-EDE3'
 
 			#puts c
-			#puts "c: %s k: %s m: %s" % [cipher, key_length, mode]
+			#puts "c: %s k: %s m: %s" % [cipher, key_size, mode]
 			#
 			# build nested hash
-			((ciphers[cipher] ||= {})[mode] ||= {})[key_length] = c
+			((ciphers[cipher] ||= {})[mode] ||= {})[key_size] = c
 		end
 		ciphers
 	end
@@ -143,7 +143,7 @@ class ModeSelector < CipherInfo
 	end
 
 	def mode(mode)
-		key_length_tree = @mode_tree[mode] or fail "unsupported mode #{mode} for cipher #{self.cipher}"
+		key_size_tree = @mode_tree[mode] or fail "unsupported mode #{mode} for cipher #{self.cipher}"
 		need_initialization_vector = 
 		if ['ECB', 'none'].include? mode
 			false
@@ -151,7 +151,7 @@ class ModeSelector < CipherInfo
 			true
 		end
 
-		KeyLengthSelector.new(self, mode, need_initialization_vector, key_length_tree)
+		KeyLengthSelector.new(self, mode, need_initialization_vector, key_size_tree)
 	end
 
 	def preferred_mode(mode)
@@ -168,38 +168,38 @@ class ModeSelector < CipherInfo
 end
 
 class KeyLengthSelector < ModeInfo
-	def initialize(cipher_info, mode, need_initialization_vector, key_length_tree)
+	def initialize(cipher_info, mode, need_initialization_vector, key_size_tree)
 		super cipher_info, mode, need_initialization_vector
-		@key_length_tree = key_length_tree
+		@key_size_tree = key_size_tree
 	end
 
-	def key_lengths
-		@key_length_tree.keys
+	def key_sizes
+		@key_size_tree.keys
 	end
 
-	def key_length(key_length)
-		if key_lengths.include? :not_available
-			fail "cipher #{self.cipher} does not support key length selection" if key_length
-			CipherSelectorInfo.new(self, @key_length_tree[:not_available], nil, false)
-		elsif @key_length_tree.include? key_length
-			CipherSelectorInfo.new(self, @key_length_tree[key_length], key_length, false)
-		elsif @key_length_tree.include? :custom
-			CipherSelectorInfo.new(self, @key_length_tree[:custom], key_length, true)
+	def key_size(key_size)
+		if key_sizes.include? :not_available
+			fail "cipher #{self.cipher} does not support key length selection" if key_size
+			CipherSelectorInfo.new(self, @key_size_tree[:not_available], nil, false)
+		elsif @key_size_tree.include? key_size
+			CipherSelectorInfo.new(self, @key_size_tree[key_size], key_size, false)
+		elsif @key_size_tree.include? :custom
+			CipherSelectorInfo.new(self, @key_size_tree[:custom], key_size, true)
 		else
-			fail "unsupported key length #{key_length} for mode #{self.mode} for cipher #{self.cipher}"
+			fail "unsupported key length #{key_size} for mode #{self.mode} for cipher #{self.cipher}"
 		end
 	end
 
-	def longest_key(custom_key_length = 256)
-		longest = key_lengths.select{|k| k.is_a? Numeric}.sort.last
+	def longest_key(custom_key_size = 256)
+		longest = key_sizes.select{|k| k.is_a? Numeric}.sort.last
 		if longest
-			key_length(longest)
+			key_size(longest)
 		else	 
-			if key_lengths.include? :not_available
+			if key_sizes.include? :not_available
 				# cannot use key length with this algorithm
-				key_length(nil)
+				key_size(nil)
 			else
-				key_length(custom_key_length)
+				key_size(custom_key_size)
 			end
 		end
 	end

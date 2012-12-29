@@ -29,8 +29,8 @@ class Envelope
 				@header[:mode] = v
 			end
 
-			def key_length(v)
-				@header[:key_length] = v.to_i
+			def key_size(v)
+				@header[:key_size] = v.to_i
 			end
 
 			def initialization_vector(v)

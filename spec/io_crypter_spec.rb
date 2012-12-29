@@ -11,7 +11,7 @@ describe IOEncrypter do
 		IOEncrypter.new(input, output, cipher_selector, 'password', initialization_vector: 't' * 16, session_key: 's' * 16)
 
 		output.string.should include('IDEA')
-		output.string.to_base64.should == "Y2lwaGVyICJJREVBIgptb2RlICJDQkMiCmtleV9sZW5ndGggMTI4CmluaXRpYWxpemF0aW9uX3ZlY3RvciAiNzQ3NDc0NzQ3NDc0NzQ3NDc0NzQ3NDc0NzQ3NDc0NzQiCnNlc3Npb25fa2V5ICI0NjhmMTNkMzVhMWM0OTZhZGZlMTQwNzY3YjU1MjIwZDc4M2ZhZDgyM2VkNzY5Y2IiCgpBpr5WgSFwVg6Cut2APFJ1"
+		output.string.to_base64.should == "Y2lwaGVyICJJREVBIgptb2RlICJDQkMiCmtleV9zaXplIDEyOAppbml0aWFsaXphdGlvbl92ZWN0b3IgIjc0NzQ3NDc0NzQ3NDc0NzQ3NDc0NzQ3NDc0NzQ3NDc0IgpzZXNzaW9uX2tleSAiNDY4ZjEzZDM1YTFjNDk2YWRmZTE0MDc2N2I1NTIyMGQ3ODNmYWQ4MjNlZDc2OWNiIgoKQaa+VoEhcFYOgrrdgDxSdQ=="
 	end
 
 	it 'should use defferent session key for each run if not specified' do
@@ -45,7 +45,7 @@ end
 
 describe IODecrypter do
 	it 'should decrypt input stream to output stream' do
-		input = StringIO.new("Y2lwaGVyICJJREVBIgptb2RlICJDQkMiCmtleV9sZW5ndGggMTI4CmluaXRpYWxpemF0aW9uX3ZlY3RvciAiNzQ3NDc0NzQ3NDc0NzQ3NDc0NzQ3NDc0NzQ3NDc0NzQiCnNlc3Npb25fa2V5ICI0NjhmMTNkMzVhMWM0OTZhZGZlMTQwNzY3YjU1MjIwZDc4M2ZhZDgyM2VkNzY5Y2IiCgpBpr5WgSFwVg6Cut2APFJ1".from_base64)
+		input = StringIO.new("Y2lwaGVyICJJREVBIgptb2RlICJDQkMiCmtleV9zaXplIDEyOAppbml0aWFsaXphdGlvbl92ZWN0b3IgIjc0NzQ3NDc0NzQ3NDc0NzQ3NDc0NzQ3NDc0NzQ3NDc0IgpzZXNzaW9uX2tleSAiNDY4ZjEzZDM1YTFjNDk2YWRmZTE0MDc2N2I1NTIyMGQ3ODNmYWQ4MjNlZDc2OWNiIgoKQaa+VoEhcFYOgrrdgDxSdQ==".from_base64)
 		output = StringIO.new
 
 		IODecrypter.new(input, output, 'password')

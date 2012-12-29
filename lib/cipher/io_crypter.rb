@@ -8,7 +8,7 @@ class IOEncrypter
 		if options[:session_key]
 			SessionKey.new(options[:session_key])
 		else
-			SessionKey.generate(cipher_selector.key_length)
+			SessionKey.generate(cipher_selector.key_size)
 		end
 
 		encrypter = Encrypter.new(cipher_selector, key, options)
@@ -28,7 +28,7 @@ class IOEncrypter
 		options[:envelope_class].new do
 			cipher cipher_selector.cipher
 			mode cipher_selector.mode
-			key_length cipher_selector.key_length if cipher_selector.key_length
+			key_size cipher_selector.key_size if cipher_selector.key_size
 			initialization_vector initialization_vector if initialization_vector
 			session_key key.encrypt(cipher_selector, password)
 		end
@@ -63,7 +63,7 @@ class IODecrypter
 			cipher_selector = CipherSelector.new
 				.cipher(header.cipher)
 				.mode(header.mode)
-				.key_length(header.key_length)
+				.key_size(header.key_size)
 			key = SessionKey.from_encrypted_session_key(cipher_selector, password, header.session_key)
 
 			decrypter_fiber = Fiber.new do

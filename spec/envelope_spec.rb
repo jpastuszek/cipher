@@ -7,7 +7,7 @@ describe Envelope::SDL do
 		Envelope::SDL.new do
 			cipher 'AES'
 			mode 'CBC'
-			key_length 128
+			key_size 128
 			initialization_vector 'abc'
 		end
 		.output do |data|
@@ -22,7 +22,7 @@ describe Envelope::SDL do
 		message.should == <<EOF.chomp
 cipher "AES"
 mode "CBC"
-key_length 128
+key_size 128
 initialization_vector "616263"
 
 testtesttesttest
@@ -35,7 +35,7 @@ EOF
 		test_message = <<EOF.chomp
 cipher "AES"
 mode "CBC"
-key_length 128
+key_size 128
 initialization_vector "616263"
 
 testtesttesttest
@@ -62,7 +62,7 @@ EOF
 
 		header.cipher.should == 'AES'
 		header.mode.should == 'CBC'
-		header.key_length.should == 128
+		header.key_size.should == 128
 		header.initialization_vector.should == 'abc'
 		body.should == "testtesttesttest\n\nhello."
 	end
