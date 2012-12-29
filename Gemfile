@@ -1,6 +1,6 @@
 source "http://rubygems.org"
 
-gem "cli", "~> 1.1.1"
+gem "cli", "~> 1.3.1"
 gem "haddock", "~> 0.2"
 gem "sdl4r", "~> 0.9"
 
