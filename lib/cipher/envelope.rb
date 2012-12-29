@@ -46,13 +46,13 @@ class Envelope
 			@header = HeaderDSL.new(&header).header
 		end
 
-		def each(&sink)
+		def output(&sink)
 			sink.call(SDL4R.dump(@header) + "\n")
 			@sink = Sink.new(&sink)
 			self
 		end
 
-		def body
+		def input
 			yield @sink
 		end
 
@@ -72,7 +72,7 @@ class Envelope
 				self
 			end
 
-			def load
+			def input
 				header = nil
 				header_data = ''
 

@@ -55,12 +55,12 @@ class Crypter
 	end
 
 	attr_reader :initialization_vector
-	def each(&sink)
+	def output(&sink)
 		@processor = Processor.new(@cipher, &sink)
 		self
 	end
 
-	def process
+	def input
 		yield @processor
 		fail 'no each block given' unless @processor
 		@processor.finalize

@@ -10,10 +10,10 @@ describe Envelope::SDL do
 			key_length 128
 			initialization_vector 'abc'
 		end
-		.each do |data|
+		.output do |data|
 			message << data
 		end
-		.body do |sink|
+		.input do |sink|
 			4.times do
 				sink << 'test'
 			end
@@ -53,7 +53,7 @@ EOF
 		.on_end do
 			body << '.'
 		end
-		.load do |sink|
+		.input do |sink|
 			# put message chunk by chunk
 			test_message.chars.each_slice(3) do |slice|
 				sink << slice.join

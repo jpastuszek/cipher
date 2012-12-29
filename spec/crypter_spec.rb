@@ -7,11 +7,11 @@ describe Encrypter do
 
 	it 'should encrypt data stream with given cipher specs and key' do
 		encrypted = ''
-		subject.each do |data|
+		subject.output do |data|
 			encrypted << data
 		end
 
-		subject.process do |sink|
+		subject.input do |sink|
 			20.times do
 				sink << 'test'
 			end
@@ -36,11 +36,11 @@ describe Encrypter do
 		subject = Encrypter.new(CipherSelector.new.cipher('BF').mode('CBC').key_length(64), 'k' * 16, initialization_vector: 'iv' * 8)
 
 		encrypted = ''
-		subject.each do |data|
+		subject.output do |data|
 			encrypted << data
 		end
 
-		subject.process do |sink|
+		subject.input do |sink|
 			20.times do
 				sink << 'test'
 			end
@@ -54,11 +54,11 @@ describe Encrypter do
 
 		encrypted = ''
 
-		subject.each do |data|
+		subject.output do |data|
 			encrypted << data
 		end
 
-		subject.process do |sink|
+		subject.input do |sink|
 			4.times do
 				sink << 'a' * 16
 			end
@@ -72,11 +72,11 @@ describe Encrypter do
 
 		encrypted = ''
 
-		subject.each do |data|
+		subject.output do |data|
 			encrypted << data
 		end
 
-		subject.process do |sink|
+		subject.input do |sink|
 			4.times do
 				sink << 'a' * 16
 			end
@@ -93,11 +93,11 @@ describe Decrypter do
 
 	it 'should decrypt data stream' do
 		decrypted = ''
-		subject.each do |data|
+		subject.output do |data|
 			decrypted << data
 		end
 
-		subject.process do |sink|
+		subject.input do |sink|
 			sink << 'KVbwK9Xp3EKIRvkg4+eudG1FCe2vK1jp1dp8Jb0eUeicVe5Bdne31afl5Z6khytT7HCsghF1S8CYWiukCeSYgzt2G8pie35ecVj1g4NvSgTl1ns0mTkTBUKDEHcEVL57'.from_base64
 		end
 
@@ -108,11 +108,11 @@ describe Decrypter do
 		subject = Decrypter.new(CipherSelector.new.cipher('BF').mode('CBC').key_length(64), 'k' * 16, initialization_vector: 'iv' * 8)
 
 		decrypted = ''
-		subject.each do |data|
+		subject.output do |data|
 			decrypted << data
 		end
 
-		subject.process do |sink|
+		subject.input do |sink|
 			sink << 'NVh81Aq0+TixCzB77Pp3gXiov1nuaexLKJzKS3iOe9SGHzfY0kHfvANM5MTB5wpfPvB0ZHo6Jup9zp8el92UNp9m9a1+xLg6OgLj4bMYcynPg7sdem8nPQ=='.from_base64
 		end
 
@@ -123,11 +123,11 @@ describe Decrypter do
 		subject = Decrypter.new(CipherSelector.new.cipher('AES').mode('CBC').key_length(128), 'k' * 16, initialization_vector: 'iv' * 8, padding: false)
 
 		decrypted = ''
-		subject.each do |data|
+		subject.output do |data|
 			decrypted << data
 		end
 
-		subject.process do |sink|
+		subject.input do |sink|
 			sink << "m10dFkVinkrM6fI/JLSMMSvAaf399xYIYbvNe0MY5CKGm6BBOoWh0ZlG5MBgT+ZpEtOOD0IGyOY3U2k2vFTrhw==".from_base64
 		end
 

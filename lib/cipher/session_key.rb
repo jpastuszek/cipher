@@ -15,11 +15,11 @@ class SessionKey < String
 
 		# setting iv since ECB may not be available for all ciphers
 		Decrypter.new(key_cipher, password_digest, initialization_vector: encrypted_session_key, padding: false)
-		.each do |out|
+		.output do |out|
 			session_key << out
 			return session_key if session_key.length >= encrypted_session_key.length
 		end
-		.process do |sink|
+		.input do |sink|
 			sink << encrypted_session_key
 			sink << encrypted_session_key
 		end
@@ -35,10 +35,10 @@ class SessionKey < String
 
 		# setting iv since ECB may not be available for all ciphers
 		Encrypter.new(key_cipher, password_digest, initialization_vector: self, padding: false)
-		.each do |encrypted_session_key|
+		.output do |encrypted_session_key|
 			return encrypted_session_key
 		end
-		.process do |sink|
+		.input do |sink|
 			sink << self
 		end
 	end
