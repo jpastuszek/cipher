@@ -130,7 +130,7 @@ class ModeSelector < CipherInfo
 	def mode(mode)
 		key_length_tree = @mode_tree[mode] or fail "unsupported mode #{mode} for cipher #{self.cipher}"
 		need_initialization_vector = 
-		if mode == 'ECB'
+		if ['ECB', 'none'].include? mode
 			false
 		else
 			true
