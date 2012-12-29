@@ -142,8 +142,12 @@ class ModeSelector < CipherInfo
 	def preferred_mode(mode)
 		if modes.include? mode
 			mode(mode)
-		else
+		elsif modes.include? 'CBC'
+			mode('CBC')
+		elsif modes.include? 'none'
 			mode('none')
+		else
+			modes.sort.first
 		end
 	end
 end
