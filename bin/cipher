@@ -97,12 +97,14 @@ end.parse! do |settings|
 		key_length_selector.longest_key(256)
 	end
 
+	key_bytes_length = (cipher_selector.key_length.to_f / 8).ceil
+
 	if settings.initialization_vector
-		settings.initialization_vector.length * 8 >= cipher_selector.key_length or fail "initialization vector should be #{cipher_selector.key_length / 8} characters long"
+		settings.initialization_vector.length == key_bytes_length or fail "initialization vector should be #{key_bytes_length} characters long"
 	end
 
 	if settings.session_key
-		settings.session_key.length * 8 >= cipher_selector.key_length or fail "session key should be #{cipher_selector.key_length / 8} characters long"
+		settings.session_key.length == key_bytes_length or fail "session key should be #{key_bytes_length} characters long"
 	end
 
 	settings.cipher_selector = cipher_selector
