@@ -53,6 +53,12 @@ settings = CLI.new do
 	switch :decrypt,
 		short: :d,
 		description: 'decrypt data'
+	switch :verbose,
+		short: :v,
+		description: 'print informational messages'
+	switch :debug,
+		short: :D,
+		description: 'print debugging messages'
 	switch :no_padding,
 		short: :P,
 		description: 'do not add/expect padding at the end of encrypted stream'
@@ -120,8 +126,11 @@ end
 
 log = Logger.new(STDERR)
 log.formatter = proc do |severity, datetime, progname, msg|
-	  "#{settings.decrypt ? 'D:' : 'E:'} #{msg}\n"
+	  "#{settings.decrypt ? 'Decrypter' : 'Encrypter'}: #{severity == "ERROR" ? "Error: " : ''}#{msg}\n"
 end
+log.level = Logger::WARN
+log.level = Logger::INFO if settings.verbose
+log.level = Logger::DEBUG if settings.debug
 
 unless settings.password
 	settings.password = Haddock::Password.generate
@@ -134,9 +143,13 @@ options[:initialization_vector] = settings.initialization_vector if settings.ini
 options[:session_key] = settings.session_key if settings.session_key
 options[:padding] = ! settings.no_padding
 
-unless settings.decrypt
-	IOEncrypter.new(settings.stdin, STDOUT, settings.cipher_selector, settings.password, options)
-else
-	IODecrypter.new(settings.stdin, STDOUT, settings.password, options)
+begin
+	unless settings.decrypt
+		IOEncrypter.new(settings.stdin, STDOUT, settings.cipher_selector, settings.password, options)
+	else
+		IODecrypter.new(settings.stdin, STDOUT, settings.password, options)
+	end
+rescue => e
+	log.error "#{e.message} (#{e.class.name})"
 end
 
