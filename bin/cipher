@@ -29,6 +29,10 @@ settings = CLI.new do
 		short: :i,
 		description: 'initialization vector for CBC, CFB, OFB and CTR modes',
 		default_label: 'random'
+	option :session_key,
+		short: :s,
+		description: 'session key',
+		default_label: 'random'
 	option :in_block_size,
 		description: 'input read block size',
 		default: 1024*256,
@@ -86,12 +90,22 @@ end.parse! do |settings|
 		exit
 	end
 
-	settings.cipher_selector =
+	cipher_selector =
 	if settings.key_length
 		key_length_selector.key_length(settings.key_length.to_i)
 	else
 		key_length_selector.longest_key(256)
 	end
+
+	if settings.initialization_vector
+		settings.initialization_vector.length * 8 >= cipher_selector.key_length or fail "initialization vector should be #{cipher_selector.key_length / 8} characters long"
+	end
+
+	if settings.session_key
+		settings.session_key.length * 8 >= cipher_selector.key_length or fail "session key should be #{cipher_selector.key_length / 8} characters long"
+	end
+
+	settings.cipher_selector = cipher_selector
 end
 
 log = Logger.new(STDERR)
@@ -106,7 +120,8 @@ end
 
 options = {}
 options[:log] = log
-options[:initialization_vector] = settings.initialization_vector.ljust(16) if settings.initialization_vector
+options[:initialization_vector] = settings.initialization_vector if settings.initialization_vector
+options[:session_key] = settings.session_key if settings.session_key
 
 unless settings.decrypt
 	IOEncrypter.new(settings.stdin, STDOUT, settings.cipher_selector, settings.password, options)

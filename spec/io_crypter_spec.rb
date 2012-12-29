@@ -8,13 +8,13 @@ describe IOEncrypter do
 		input = StringIO.new('hello world')
 		output = StringIO.new
 
-		IOEncrypter.new(input, output, cipher_selector, 'password', initialization_vector: 'test' * 16)
+		IOEncrypter.new(input, output, cipher_selector, 'password', initialization_vector: 't' * 16, session_key: 's' * 16)
 
 		output.string.should include('IDEA')
-		output.string.length.should > 30
+		output.string.to_base64.should == "Y2lwaGVyICJJREVBIgptb2RlICJDQkMiCmtleV9sZW5ndGggMTI4CmluaXRpYWxpemF0aW9uX3ZlY3RvciAiNzQ3NDc0NzQ3NDc0NzQ3NDc0NzQ3NDc0NzQ3NDc0NzQiCnNlc3Npb25fa2V5ICIyOTAzMjkxMDE4ZTJlNjZjMjkwMzI5MTAxOGUyZTY2YyIKCkGmvlaBIXBWDoK63YA8UnU="
 	end
 
-	it 'should use defferent session key for each run' do
+	it 'should use defferent session key for each run if not specified' do
 		cipher_selector = CipherSelector.new.cipher('IDEA').mode('CBC').longest_key(128)
 		
 		input = StringIO.new('hello world')
@@ -24,6 +24,20 @@ describe IOEncrypter do
 		input.rewind
 		output2 = StringIO.new
 		IOEncrypter.new(input, output2, cipher_selector, 'password', initialization_vector: 'test' * 16)
+
+		output.string.should_not == output2.string
+	end
+
+	it 'should use defferent initialization vector for each run if not specified' do
+		cipher_selector = CipherSelector.new.cipher('IDEA').mode('CBC').longest_key(128)
+		
+		input = StringIO.new('hello world')
+		output = StringIO.new
+		IOEncrypter.new(input, output, cipher_selector, 'password', session_key: 's' * 16)
+
+		input.rewind
+		output2 = StringIO.new
+		IOEncrypter.new(input, output2, cipher_selector, 'password', session_key: 's' * 16)
 
 		output.string.should_not == output2.string
 	end

@@ -4,7 +4,13 @@ require_relative 'session_key'
 
 class IOEncrypter
 	def initialize(input, output, cipher_selector, password, options = {})
-		key = SessionKey.generate(cipher_selector.key_length)
+		key = 
+		if options[:session_key]
+			SessionKey.new(options[:session_key])
+		else
+			SessionKey.generate(cipher_selector.key_length)
+		end
+
 		encrypter = Encrypter.new(cipher_selector, key, options)
 		options = { 
 			in_block_size: 1024*256,
