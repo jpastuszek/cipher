@@ -21,7 +21,7 @@ describe CipherSelector do
 			flat << [cipher, mode, key]
 		end
 
-		flat.should include ["AES", "CBC", 128]
+		flat.should include ["AES", ["CBC", :full_block], 128]
 	end
 
 	it 'should privide block size' do
@@ -40,7 +40,7 @@ describe CipherSelector do
 		end
 
 		it 'should provide list of available modes' do
-			subject.modes.should include 'CBC'
+			subject.modes.should include ['CBC', :full_block]
 		end
 
 		it 'should raise error if selected mode does not exist' do
@@ -63,6 +63,47 @@ describe CipherSelector do
 
 		it '#preferred_mode should select none mode when not available' do
 			CipherSelector.new.cipher('RC4').preferred_mode('CBC').mode.should == 'none'
+		end
+
+		describe 'sub block selection' do
+			it 'should allow selecting sub block size from 8 to cipher block size in 8 bit increments' do
+				lambda {
+					subject.mode('CFB', 8)
+					subject.mode('CFB', 16)
+					subject.mode('CFB', 24)
+					subject.mode('CFB', 32)
+					subject.mode('CFB', 64)
+					subject.mode('CFB', 128)
+				}.should_not raise_error
+			end
+
+			it 'should raise error if sub block size is not supported' do
+				lambda {
+					CipherSelector.new.cipher('BF').mode('CFB', 1)
+				}.should raise_error RuntimeError, 'unsupported sub block size 1 for mode CFB for cipher BF'
+
+				lambda {
+					subject.mode('CFB', 15)
+				}.should raise_error RuntimeError 
+
+				lambda {
+					subject.mode('CFB', 256)
+				}.should raise_error RuntimeError 
+
+				lambda {
+					CipherSelector.new.cipher('BF').mode('CFB', 128)
+				}.should raise_error RuntimeError 
+			end
+
+			it 'should raise error is sub block cannot be used with given mode' do
+				lambda {
+					CipherSelector.new.cipher('AES').mode('CBC', 8)
+				}.should raise_error RuntimeError 
+
+				lambda {
+					CipherSelector.new.cipher('AES').mode('EBC', 8)
+				}.should raise_error RuntimeError 
+			end
 		end
 	end
 
@@ -133,6 +174,19 @@ describe CipherSelector do
 			cipher.openssl_cipher_name.should == 'IDEA'
 			cipher.key_size.should == 128
 			cipher.need_key_size?.should be_true
+		end
+
+		it 'should preferr selecting predefined mode for given sub block if available' do
+			cipher = CipherSelector.new.cipher('AES').mode('CFB', 1).key_size(128)
+			cipher.openssl_cipher_name.should == 'AES-128-CFB1'
+
+			cipher = CipherSelector.new.cipher('AES').mode('CFB', 8).key_size(128)
+			cipher.openssl_cipher_name.should == 'AES-128-CFB8'
+		end
+
+		it 'should use ECB preset for sub block preset is not available' do
+			cipher = CipherSelector.new.cipher('AES').mode('CFB', 16).key_size(128)
+			cipher.openssl_cipher_name.should == 'AES-128-ECB'
 		end
 	end
 end

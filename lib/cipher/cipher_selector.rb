@@ -20,13 +20,15 @@ class CipherInfo
 end
 
 class ModeInfo < CipherInfo
-	def initialize(cipher_info, mode, need_initialization_vector)
+	def initialize(cipher_info, mode, sub_block_size, need_initialization_vector)
 		super(cipher_info.cipher)
 		@mode = mode
+		@sub_block_size = sub_block_size
 		@need_initialization_vector = need_initialization_vector
 	end
 
 	attr_reader :mode
+	attr_reader :sub_block_size
 
 	def need_initialization_vector?
 		@need_initialization_vector
@@ -35,7 +37,7 @@ end
 
 class CipherSelectorInfo < ModeInfo
 	def initialize(mode_info, openssl_cipher_name, key_size, need_key_size)
-		super(mode_info, mode_info.mode, mode_info.need_initialization_vector?)
+		super(mode_info, mode_info.mode, mode_info.sub_block_size, mode_info.need_initialization_vector?)
 		@openssl_cipher_name = openssl_cipher_name
 		@key_size = key_size
 		@need_key_size = need_key_size
@@ -48,6 +50,7 @@ class CipherSelectorInfo < ModeInfo
 		@need_key_size
 	end
 end
+
 
 class CipherSelector
 	def initialize
@@ -79,18 +82,18 @@ class CipherSelector
 		ciphers = {}
 		# default alias is for CBC mode
 		aliases = {
-			'RC2'			=> ['RC2', 128, 'CBC'],
-			'IDEA'		=> ['IDEA', :custom, 'CBC'],
-			'DES'			=> ['DES', :custom, 'CBC'],
-			'CAST'		=> ['CAST', :custom, 'CBC'],
-			'BF'			=> ['BF', :custom, 'CBC'],
-			'DES-EDE' => ['DES-EDE', :custom, 'ECB'],
-			'DES3'		=> ['DES-EDE3', :custom, 'CBC'],
-			'DESX'		=> ['DES-EDE3', :custom, 'none'],
-			'RC4'			=> ['RC4', :custom, 'none'], # streaming cipher: no mode
-			'AES128'	=> ['AES', 128, 'CBC'],
-			'AES192'	=> ['AES', 192, 'CBC'],
-			'AES256'	=> ['AES', 256, 'CBC'],
+			'RC2'			=> ['RC2', 128, 'CBC', :full_block],
+			'IDEA'		=> ['IDEA', :custom, 'CBC', :full_block],
+			'DES'			=> ['DES', :custom, 'CBC', :full_block],
+			'CAST'		=> ['CAST', :custom, 'CBC', :full_block],
+			'BF'			=> ['BF', :custom, 'CBC', :full_block],
+			'DES-EDE' => ['DES-EDE', :custom, 'ECB', :full_block],
+			'DES3'		=> ['DES-EDE3', :custom, 'CBC', :full_block],
+			'DESX'		=> ['DES-EDE3', :custom, 'none', :full_block],
+			'RC4'			=> ['RC4', :custom, 'none', :full_block], # streaming cipher: no mode
+			'AES128'	=> ['AES', 128, 'CBC', :full_block],
+			'AES192'	=> ['AES', 192, 'CBC', :full_block],
+			'AES256'	=> ['AES', 256, 'CBC', :full_block],
 		}
 
 		# use only upcased aliases
@@ -102,16 +105,18 @@ class CipherSelector
 			a <=> b
 		end.uniq.map do |c|
 			# all variants of alias construction
-			cipher, key_size, mode = 
+			cipher, key_size, mode, sub_block_size = 
 			case c
 				when lambda{|c| aliases.member? c}
 					aliases[c]
+				when /([^-]+)-([0-9]+)-([^0-9]+)([0-9]+)/
+					[$1, $2.to_i, $3, $4.to_i]
 				when /([^-]+)-([0-9]+)-(.*)/
-					[$1, $2.to_i, $3]
+					[$1, $2.to_i, $3, :full_block]
 				when /([^-]+)-([0-9]+)/
-					[$1, $2.to_i, 'none']
+					[$1, $2.to_i, 'none', :full_block]
 				when /(.*)-(.*)/
-					[$1, :custom, $2]
+					[$1, :custom, $2, :full_block]
 				else
 					#STDERR.puts "unsupported cipher alias: #{c}"
 			end
@@ -123,10 +128,10 @@ class CipherSelector
 			key_size = 192 if cipher == 'DES-EDE3'
 
 			#puts c
-			#puts "c: %s k: %s m: %s" % [cipher, key_size, mode]
+			#puts "c: %s k: %s m: %s s: %s" % [cipher, key_size, mode, sub_block_size]
 			#
 			# build nested hash
-			((ciphers[cipher] ||= {})[mode] ||= {})[key_size] = c
+			((ciphers[cipher] ||= {})[[mode, sub_block_size]] ||= {})[key_size] = c
 		end
 		ciphers
 	end
@@ -139,11 +144,31 @@ class ModeSelector < CipherInfo
 	end
 
 	def modes
-		@mode_tree.keys
+		out = @mode_tree.keys
+		if @mode_tree.keys.include? ['ECB', :full_block]
+			out << ['CFB', :custom]
+			out << ['OFB', :custom]
+		end
+		out
 	end
 
-	def mode(mode)
-		key_size_tree = @mode_tree[mode] or fail "unsupported mode #{mode} for cipher #{self.cipher}"
+	def mode(mode, sub_block_size = :full_block)
+		key_size_tree = 
+		if @mode_tree.include? [mode, sub_block_size] # have preset
+			@mode_tree[[mode, sub_block_size]] 
+		elsif ['CFB', 'OFB'].include? mode and @mode_tree.include? ['ECB', :full_block]
+			if sub_block_size > block_size or 
+					sub_block_size < 8 or 
+					sub_block_size % 8 != 0
+				fail "unsupported sub block size #{sub_block_size} for mode #{mode} for cipher #{cipher}"
+			end
+			@mode_tree[['ECB', :full_block]] 
+		else
+			fail "unsupported mode #{mode} for cipher #{cipher}"
+		end
+
+		sub_block_size = block_size if sub_block_size == :full_block
+
 		need_initialization_vector = 
 		if ['ECB', 'none'].include? mode
 			false
@@ -151,25 +176,30 @@ class ModeSelector < CipherInfo
 			true
 		end
 
-		KeyLengthSelector.new(self, mode, need_initialization_vector, key_size_tree)
+		KeyLengthSelector.new(self, mode, sub_block_size, need_initialization_vector, key_size_tree)
 	end
 
-	def preferred_mode(mode)
-		if modes.include? mode
+	def preferred_mode(mode, sub_block_size = :full_block)
+		if modes.include? [mode, sub_block_size]
 			mode(mode)
-		elsif modes.include? 'CBC'
+		elsif modes.include? ['CBC', :full_block]
 			mode('CBC')
-		elsif modes.include? 'none'
+		elsif modes.include? ['none', :full_block]
 			mode('none')
 		else
-			modes.sort.first
+			modes.sort do |a, b|
+				next a.first <=> b.first if a.last == :full_block and b.last == :full_block
+				next 1 if a.last == :full_block
+				next -1 if b.last == :full_block
+				a.first <=> b.first
+			end.first
 		end
 	end
 end
 
 class KeyLengthSelector < ModeInfo
-	def initialize(cipher_info, mode, need_initialization_vector, key_size_tree)
-		super cipher_info, mode, need_initialization_vector
+	def initialize(cipher_info, mode, sub_block_size, need_initialization_vector, key_size_tree)
+		super cipher_info, mode, sub_block_size, need_initialization_vector
 		@key_size_tree = key_size_tree
 	end
 

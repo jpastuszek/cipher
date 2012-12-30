@@ -80,7 +80,7 @@ end.parse! do |settings|
 	mode_selctor = cipher_selector.cipher(settings.cipher)
 
 	if settings.list_modes
-		STDERR.puts mode_selctor.modes.map(&:to_s).sort.join ' '
+		STDERR.puts mode_selctor.modes.map{|mode, sub_block_size| "#{mode}#{sub_block_size == :full_block ? '' : "-#{sub_block_size}"}"  }.sort.join ' '
 		exit
 	end
 
