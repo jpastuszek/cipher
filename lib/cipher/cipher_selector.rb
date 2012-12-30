@@ -115,6 +115,8 @@ class CipherSelector
 					[$1, $2.to_i, $3, :full_block]
 				when /([^-]+)-([0-9]+)/
 					[$1, $2.to_i, 'none', :full_block]
+				when /(.*)-([^0-9]+)([0-9]+)/
+					[$1, :custom, $2, $3]
 				when /(.*)-(.*)/
 					[$1, :custom, $2, :full_block]
 				else
@@ -129,10 +131,17 @@ class CipherSelector
 
 			#puts c
 			#puts "c: %s k: %s m: %s s: %s" % [cipher, key_size, mode, sub_block_size]
-			#
+			
 			# build nested hash
 			((ciphers[cipher] ||= {})[[mode, sub_block_size]] ||= {})[key_size] = c
+
+			# add custom mode supported settings
+			if mode == 'ECB' and sub_block_size == :full_block
+				((ciphers[cipher] ||= {})[['CFB', :custom]] ||= {})[key_size] = c
+				((ciphers[cipher] ||= {})[['OFB', :custom]] ||= {})[key_size] = c
+			end
 		end
+
 		ciphers
 	end
 end
@@ -144,19 +153,14 @@ class ModeSelector < CipherInfo
 	end
 
 	def modes
-		out = @mode_tree.keys
-		if @mode_tree.keys.include? ['ECB', :full_block]
-			out << ['CFB', :custom]
-			out << ['OFB', :custom]
-		end
-		out
+		@mode_tree.keys
 	end
 
 	def mode(mode, sub_block_size = :full_block)
 		key_size_tree = 
 		if @mode_tree.include? [mode, sub_block_size] # have preset
 			@mode_tree[[mode, sub_block_size]] 
-		elsif ['CFB', 'OFB'].include? mode and @mode_tree.include? ['ECB', :full_block]
+		elsif @mode_tree.include? [mode, :custom]
 			if sub_block_size > block_size or 
 					sub_block_size < 8 or 
 					sub_block_size % 8 != 0
@@ -191,6 +195,9 @@ class ModeSelector < CipherInfo
 				next a.first <=> b.first if a.last == :full_block and b.last == :full_block
 				next 1 if a.last == :full_block
 				next -1 if b.last == :full_block
+				next a.first <=> b.first if a.last == :custom and b.last == :custom
+				next -1 if a.last == :custom
+				next 1 if b.last == :custom
 				a.first <=> b.first
 			end.first
 		end

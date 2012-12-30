@@ -66,8 +66,8 @@ end.parse! do |settings|
 	cipher_selector = CipherSelector.new
 
 	if settings.list
-		cipher_selector.flat_list do |*list|
-			STDERR.puts "%s %s %s" % list
+		cipher_selector.flat_list do |cipher, mode, key_size|
+			STDERR.puts "%s %s %s" % [cipher, "#{mode.first}#{mode.last == :full_block ? '' : "-#{mode.last}"}", key_size]
 		end
 		exit
 	end
