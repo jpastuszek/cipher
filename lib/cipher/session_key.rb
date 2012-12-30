@@ -1,10 +1,12 @@
+require_relative 'string_digest'
+
 class SessionKey < String
 	def self.generate(key_size)
 		self.new(OpenSSL::Random.random_bytes((key_size.to_f / 8).ceil))
 	end
 
 	def self.from_encrypted_session_key(cipher_selector, password, encrypted_session_key)
-		password_digest = OpenSSL::PKCS5.pbkdf2_hmac_sha1(password, 'salt', 2000, (cipher_selector.key_size.to_f / 8).ceil)
+		password_digest = password.digest(cipher_selector.key_size)
 		key_cipher_selector = CipherSelector.new.cipher(cipher_selector.cipher).preferred_mode('ECB').key_size(cipher_selector.key_size)
 
 		session_key = ''
@@ -22,7 +24,7 @@ class SessionKey < String
 	end
 
 	def encrypt(cipher_selector, password)
-		password_digest = OpenSSL::PKCS5.pbkdf2_hmac_sha1(password, 'salt', 2000, (cipher_selector.key_size.to_f / 8).ceil)
+		password_digest = password.digest(cipher_selector.key_size)
 		key_cipher_selector = CipherSelector.new.cipher(cipher_selector.cipher).preferred_mode('ECB').key_size(cipher_selector.key_size)
 
 		session_key = ''
