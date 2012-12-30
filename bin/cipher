@@ -85,10 +85,18 @@ end.parse! do |settings|
 	end
 
 	key_size_selector = 
-	if settings.mode =~ /prefer (.+)/
-		mode_selctor.preferred_mode($1)
+	if settings.mode =~ /(preferr |)([^-]+)(-(.*)|)/
+		prefer = ! $1.empty?
+		mode = $2
+		sub_block_size = $4 ? $4.to_i : :full_block
+
+		if prefer
+			mode_selctor.preferred_mode(mode, sub_block_size)
+		else
+			mode_selctor.mode(mode, sub_block_size)
+		end
 	else
-		mode_selctor.mode(settings.mode)
+		fail 'bad mode format'
 	end
 
 	if settings.list_key_sizes
