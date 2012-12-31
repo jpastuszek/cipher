@@ -85,7 +85,7 @@ end.parse! do |settings|
 	end
 
 	key_size_selector = 
-	if settings.mode =~ /(preferr |)([^-]+)(-(.*)|)/
+	if settings.mode =~ /(prefer |)([^-]+)(-(.*)|)/
 		prefer = ! $1.empty?
 		mode = $2
 		sub_block_size = $4 ? $4.to_i : :full_block
