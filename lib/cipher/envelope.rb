@@ -62,8 +62,8 @@ class Envelope
 				self
 			end
 
-			def on_body(&callback)
-				@on_body = callback
+			def output(&callback)
+				@output = callback
 				self
 			end
 
@@ -87,10 +87,10 @@ class Envelope
 							header.session_key = header.session_key.from_hex if header.session_key
 
 							@on_header.call(header) if @on_header
-							@on_body.call(data) if @on_body
+							@output.call(data) if @output
 						end
 					else
-						@on_body.call(data) if @on_body
+						@output.call(data) if @output
 					end
 				end
 

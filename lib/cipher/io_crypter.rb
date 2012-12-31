@@ -79,7 +79,7 @@ class IODecrypter
 			end
 			decrypter_fiber.resume # start fiber
 		end
-		.on_body do |encrypted_data|
+		.output do |encrypted_data|
 			decrypter_fiber.resume encrypted_data
 		end
 		.on_end do

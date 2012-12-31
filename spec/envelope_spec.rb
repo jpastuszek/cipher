@@ -47,7 +47,7 @@ EOF
 		.on_header do |h|
 			header = h
 		end
-		.on_body do |data|
+		.output do |data|
 			body << data
 		end
 		.on_end do

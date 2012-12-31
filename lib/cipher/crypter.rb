@@ -59,6 +59,7 @@ class Crypter
 	end
 
 	attr_reader :initialization_vector
+
 	def output(&sink)
 		@processor = Processor.new(@cipher, &sink)
 		self
