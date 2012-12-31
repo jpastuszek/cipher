@@ -1,7 +1,9 @@
 require 'logger'
 require_relative 'string_hex'
+require_relative 'cipher_selector'
+require_relative 'filter'
 
-class Crypter
+class Crypter < Filter
 	class Processor
 		def initialize(cipher, &sink)
 			@cipher = cipher
@@ -56,20 +58,16 @@ class Crypter
 			@cipher.padding = 0
 			@log.debug "Padding disabled"
 		end
+
+		super() do |input|
+			@cipher.update input
+		end
+		footer do 
+			@cipher.final
+		end
 	end
 
 	attr_reader :initialization_vector
-
-	def output(&sink)
-		@processor = Processor.new(@cipher, &sink)
-		self
-	end
-
-	def input
-		yield @processor
-		fail 'no each block given' unless @processor
-		@processor.finalize
-	end
 end
 
 class Encrypter < Crypter

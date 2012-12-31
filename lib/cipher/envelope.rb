@@ -1,18 +1,9 @@
 require 'sdl4r'
 require_relative 'string_hex'
+require_relative 'filter'
 
 class Envelope
-	class Sink
-		def initialize(&sink)
-			@sink = sink
-		end
-
-		def <<(data)
-			@sink.call data
-		end
-	end
-
-	class SDL
+	class SDL < Filter
 		class HeaderDSL
 			def initialize(&dsl)
 				@header = {}
@@ -44,59 +35,51 @@ class Envelope
 
 		def initialize(&header)
 			@header = HeaderDSL.new(&header).header
+			header do
+				SDL4R.dump(@header) + "\n"
+			end
+			super() do |input|
+				input # pass through
+			end
 		end
 
-		def output(&sink)
-			sink.call(SDL4R.dump(@header) + "\n")
-			@sink = Sink.new(&sink)
-			self
-		end
-
-		def input
-			yield @sink
-		end
-
-		class Loader
-			def on_header(&callback)
-				@on_header = callback
-				self
-			end
-
-			def output(&callback)
-				@output = callback
-				self
-			end
-
-			def on_end(&callback)
-				@on_end = callback
-				self
-			end
-
-			def input
+		class Loader < Filter
+			def initialize
 				header = nil
 				header_data = ''
 
-				sink = Sink.new do |data|
+				super() do |input|
 					unless header
-						header_data << data
+						header_data << input
 						if header_data.include? "\n\n"
-							header, data = header_data.split("\n\n", 2)
+							header, input = header_data.split("\n\n", 2)
 
 							header = SDL4R.load(header)
 							header.initialization_vector = header.initialization_vector.from_hex if header.initialization_vector
 							header.session_key = header.session_key.from_hex if header.session_key
 
 							@on_header.call(header) if @on_header
-							@output.call(data) if @output
+							next input
 						end
+						next nil
 					else
-						@output.call(data) if @output
+						input
 					end
 				end
 
-				yield sink
+				footer do
+					@on_end.call if @on_end
+					nil
+				end
+			end
 
-				@on_end.call if @on_end
+			def on_header(&callback)
+				@on_header = callback
+				self
+			end
+
+			def on_end(&callback)
+				@on_end = callback
 				self
 			end
 		end
