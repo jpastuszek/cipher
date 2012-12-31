@@ -66,20 +66,10 @@ class Envelope
 						input
 					end
 				end
-
-				footer do
-					@on_end.call if @on_end
-					nil
-				end
 			end
 
 			def on_header(&callback)
 				@on_header = callback
-				self
-			end
-
-			def on_end(&callback)
-				@on_end = callback
 				self
 			end
 		end

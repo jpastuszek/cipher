@@ -25,17 +25,33 @@ class Filter
 
 	def input
 		fail 'filter output not connected' unless @processor
+
 		@processor.output @header_input.call if @header_input
+		@on_start and @on_start.each{|callback| callback.call}
 		yield @processor
+		@on_end and @on_end.each{|callback| callback.call}
 		@processor.output @footer_input.call if @footer_input
+		self
 	end
 
 	def header(&input)
 		@header_input = input
+		self
 	end
 
 	def footer(&input)
 		@footer_input = input
+		self
+	end
+
+	def on_start(&callback)
+		(@on_start ||= []) << callback
+		self
+	end
+
+	def on_end(&callback)
+		(@on_end ||= []) << callback
+		self
 	end
 end
 
