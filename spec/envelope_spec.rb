@@ -50,7 +50,7 @@ EOF
 		.output do |data|
 			body << data
 		end
-		.on_end do
+		.on_close do
 			body << '.'
 		end
 		.input do |sink|

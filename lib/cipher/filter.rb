@@ -1,7 +1,7 @@
 class Filter
 	class Processor
-		def initialize(output, &input_filter)
-			@output = output
+		def initialize(&input_filter)
+			@output = ->(a){}
 			@input_filter = input_filter
 		end
 
@@ -12,25 +12,28 @@ class Filter
 		def output(output)
 			@output.call(output) if output
 		end
+		
+		def output=(output)
+			@output = output
+		end
 	end
 
 	def initialize(&input_filter)
 		@input_filter = input_filter
+		@processor = Processor.new(&@input_filter)
 	end
 
 	def output(&output)
-		@processor = Processor.new(output, &@input_filter)
+		@processor.output = output
 		self
 	end
 
 	def input
-		fail 'filter output not connected' unless @processor
-
-		@on_start and @on_start.each{|callback| callback.call}
+		@on_open and @on_open.each{|callback| callback.call}
 		@processor.output @header_input.call if @header_input
 		yield @processor
 		@processor.output @footer_input.call if @footer_input
-		@on_end and @on_end.each{|callback| callback.call}
+		@on_close and @on_close.each{|callback| callback.call}
 		self
 	end
 
@@ -44,13 +47,13 @@ class Filter
 		self
 	end
 
-	def on_start(&callback)
-		(@on_start ||= []) << callback
+	def on_open(&callback)
+		(@on_open ||= []) << callback
 		self
 	end
 
-	def on_end(&callback)
-		(@on_end ||= []) << callback
+	def on_close(&callback)
+		(@on_close ||= []) << callback
 		self
 	end
 
@@ -67,7 +70,7 @@ class Filter
 			@chain_fiber.resume output if @chain_fiber
 		end
 
-		on_end do
+		on_close do
 			@chain_fiber.resume nil
 			@chain_fiber = nil
 		end
