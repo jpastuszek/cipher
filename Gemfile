@@ -11,4 +11,7 @@ group :development do
   gem "rdoc", "~> 3.12"
   gem "bundler", "~> 1.1"
   gem "jeweler", "~> 1.8.3"
+  gem "cucumber", ">= 0"
+  gem "capture-output", "~> 1.0"
+  gem "daemon", "~> 1.1"
 end

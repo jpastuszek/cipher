@@ -1,0 +1,4 @@
+#!/usr/bin/env ruby
+
+exec($0.sub(/decipher/, 'cipher'), *ARGV, '-d')
+
