@@ -30,6 +30,7 @@ class IOEncrypter
 			cipher cipher_selector.cipher
 			mode cipher_selector.mode
 			key_size cipher_selector.key_size if cipher_selector.key_size
+			sub_block_size cipher_selector.sub_block_size if cipher_selector.sub_block_size != cipher_selector.block_size
 			initialization_vector initialization_vector if initialization_vector
 			session_key key.encrypt(cipher_selector, password)
 		end
@@ -64,7 +65,7 @@ class IODecrypter
 		envelope.on_header do |header|
 			cipher_selector = CipherSelector.new
 				.cipher(header.cipher)
-				.mode(header.mode)
+				.mode(header.mode, header.sub_block_size || :full_block)
 				.key_size(header.key_size)
 
 			key = SessionKey.from_encrypted_session_key(cipher_selector, password, header.session_key)

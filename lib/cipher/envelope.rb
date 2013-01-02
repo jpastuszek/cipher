@@ -24,6 +24,10 @@ class Envelope
 				@header[:key_size] = v.to_i
 			end
 
+			def sub_block_size(v)
+				@header[:sub_block_size] = v.to_i
+			end
+
 			def initialization_vector(v)
 				@header[:initialization_vector] = v.to_hex
 			end

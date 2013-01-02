@@ -70,6 +70,16 @@ class ProgramList
 		@programs[name] ||= Program.new(name)
 	end
 
+	include Enumerable
+
+	def each(&block)
+		@programs.each(&block)
+	end
+
+	def each_pair(&block)
+		@programs.each_pair(&block)
+	end
+
 	def terminate
 		@programs.each do |name, program|
 			program.terminate
