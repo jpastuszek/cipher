@@ -23,25 +23,3 @@ Feature: Encrypting and decrypting streams with CLI application
 			| session_key |
 			| initialization_vector |
 
-	@test
-	Scenario: Encryption and decryption with different settings
-		Given cipher argument -p test
-		Given decipher argument -p test
-		Given content of test.txt file is used as cipher input
-		When following arguments are used to run cipher:
-			| -k 128 |
-			| -k 192 |
-			| -k 192 |
-			| -m CFB |
-			| -m ECB |
-			| -m CFB |
-			| -m CFB-1 |
-			| -m CFB-8 |
-			| -m OFB |
-			| -m OFB-1 |
-			| -m OFB-8 |
-			| -c BF |
-			| -c BF -m CFB |
-			| -c BF -k 192 |
-		And I run cipher with output passed through decipher for each argument
-
