@@ -123,7 +123,7 @@ class SpawnProgram < ProgramBase
 		#puts ">> spawning #{program} #{args}"
 		r, w = IO.pipe
 		ir, @input = IO.pipe
-		@pid = Process.spawn("bundle exec #{program} #{args}", :in => ir, :out => w, :err => w)
+		@pid = Process.spawn("bundle exec #{program} #{args}", :in => ir, :out => w, :err => STDERR)
 		w.close
 		@out_queue = Queue.new
 

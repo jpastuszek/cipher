@@ -35,15 +35,51 @@ Feature: Encrypting and decrypting streams with different encryption parameters
 		When I run cipher with output sent through decipher
 		Then decipher output should be the same as cipher input
 
-	@encryption @aes @native-sub-block
+	@encryption @aes @native-sub-block @cfb
 	Scenario: Encryption with AES 128 CFB-1
 		Given cipher argument -c AES -k 128 -m CFB-1
 		When I run cipher with output sent through decipher
 		Then decipher output should be the same as cipher input
 
-	@encryption @aes @native-sub-block
+	@encryption @aes @native-sub-block @cfb
 	Scenario: Encryption with AES 128 CFB-8
 		Given cipher argument -c AES -k 128 -m CFB-8
+		When I run cipher with output sent through decipher
+		Then decipher output should be the same as cipher input
+
+	@encryption @aes @custom-sub-block @cfb
+	Scenario: Encryption with AES 128 CFB-16
+		Given cipher argument -c AES -k 128 -m CFB-16
+		When I run cipher with output sent through decipher
+		Then decipher output should be the same as cipher input
+
+	@encryption @aes @custom-sub-block @cfb
+	Scenario: Encryption with AES 128 CFB-64
+		Given cipher argument -c AES -k 128 -m CFB-64
+		When I run cipher with output sent through decipher
+		Then decipher output should be the same as cipher input
+
+	@encryption @aes @native-sub-block @ofb
+	Scenario: Encryption with AES 128 OFB-1
+		Given cipher argument -c AES -k 128 -m OFB-1
+		When I run cipher with output sent through decipher
+		Then decipher output should be the same as cipher input
+
+	@encryption @aes @native-sub-block @ofb
+	Scenario: Encryption with AES 128 OFB-8
+		Given cipher argument -c AES -k 128 -m OFB-8
+		When I run cipher with output sent through decipher
+		Then decipher output should be the same as cipher input
+
+	@encryption @aes @custom-sub-block @ofb
+	Scenario: Encryption with AES 128 OFB-16
+		Given cipher argument -c AES -k 128 -m OFB-16
+		When I run cipher with output sent through decipher
+		Then decipher output should be the same as cipher input
+
+	@encryption @aes @custom-sub-block @ofb
+	Scenario: Encryption with AES 128 OFB-64
+		Given cipher argument -c AES -k 128 -m OFB-64
 		When I run cipher with output sent through decipher
 		Then decipher output should be the same as cipher input
 
