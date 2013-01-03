@@ -96,7 +96,7 @@ end.parse! do |settings|
 		if prefer
 			mode_selctor.preferred_mode(mode, sub_block_size, prefer_custom_sub_block_processor: settings.prefer_custom_sub_block_processor)
 		else
-			mode_selctor.mode(mode, sub_block_size, prefffer_custom_sub_block_processor: settings.prefer_custom_sub_block_processor)
+			mode_selctor.mode(mode, sub_block_size, prefer_custom_sub_block_processor: settings.prefer_custom_sub_block_processor)
 		end
 	else
 		fail 'bad mode format'
