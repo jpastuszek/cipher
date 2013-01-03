@@ -13,20 +13,16 @@ module BlockCipher
 
 				shift_register = @initialization_vector
 				input_sub_block = nil
-
-				padding_length = 0
+				last_block_length = nil
 
 				@log.debug "Using initialization vector: #{initialization_vector.to_hex}"
 
 				# save input and send shift_register to crypter
 				super() do |input, output|
-					input_sub_block = 
-					if input.length < sub_block_length and options[:padding] 
-						padding_length = sub_block_length - input.length
-						input + padding_length.chr(Encoding::ASCII_8BIT) * padding_length
-					else
-						input
-					end
+					input_sub_block = input
+
+					# save size of last block if smaller that sub block
+					last_block_length = input.length if input.length < sub_block_length
 
 					output << shift_register
 				end
@@ -40,7 +36,14 @@ module BlockCipher
 				xor_shift = Filter.new do |crypt_block, output|
 					crypt_block_sub_block = crypt_block.byteslice(0, sub_block_length)
 					ciphertext = crypt_block_sub_block ^ input_sub_block
-					output << ciphertext
+
+					unless last_block_length
+						output << ciphertext
+					else
+						# strip bytes not needed for decryption - no paddning needed in this mode
+						output << ciphertext.byteslice(0, last_block_length)
+					end
+
 					shift_register = shift_register.lshift(ciphertext.byteslice(0, sub_block_length))
 				end
 				crypter.nest(xor_shift)

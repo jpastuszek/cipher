@@ -27,11 +27,11 @@ settings = CLI.new do
 		default_label: 'auto generated'
 	option :initialization_vector,
 		short: :i,
-		description: 'initialization vector for CBC, CFB, OFB and CTR modes',
+		description: 'initialization vector in hex for CBC, CFB, OFB and CTR modes',
 		default_label: 'random'
 	option :session_key,
 		short: :s,
-		description: 'session key',
+		description: 'session key in hex',
 		default_label: 'random'
 	option :in_block_size,
 		short: :b,
@@ -120,12 +120,14 @@ end.parse! do |settings|
 
 	block_length = (cipher_selector.block_size.to_f / 8).ceil
 	if settings.initialization_vector
-		settings.initialization_vector.length == block_length or fail "initialization vector should be #{block_length} characters long"
+		settings.initialization_vector = settings.initialization_vector.from_hex
+		settings.initialization_vector.length == block_length or fail "initialization vector should be #{block_length * 2} characters long (hex)"
 	end
 
 	key_length = (cipher_selector.key_size.to_f / 8).ceil
 	if settings.session_key
-		settings.session_key.length == key_length or fail "session key should be #{key_length} characters long"
+		settings.session_key = settings.session_key.from_hex
+		settings.session_key.length == key_length or fail "session key should be #{key_length * 2} characters long (hex)"
 	end
 
 	if not settings.password and settings.decrypt
