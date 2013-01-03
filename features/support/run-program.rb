@@ -171,6 +171,7 @@ class SpawnProgram < ProgramBase
 
 	def wait_exit
 		super @pid
+		@thread.join
 	end
 end
 
