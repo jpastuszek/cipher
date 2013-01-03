@@ -2,8 +2,8 @@ require_relative '../lib/cipher/filter'
 
 describe Filter do
 	subject do
-		Filter.new do |input|
-			input.upcase
+		Filter.new do |input, output|
+			output << input.upcase
 		end
 	end
 
@@ -19,6 +19,60 @@ describe Filter do
 		end
 
 		out.should == 'HELLO WORLD'
+	end
+
+	it 'should allow passing multiple output values for one input' do
+		out = ''
+		subject = Filter.new do |input, output|
+			output << input.upcase
+			output << ' '
+			output << 'WORLD'
+		end
+
+		subject.output do |output|
+			out << output
+		end
+		subject.input do |input|
+			input << 'hello'
+		end
+
+		out.should == 'HELLO WORLD'
+	end
+
+	it 'should pass nil values' do
+		out = []
+		subject = Filter.new do |input, output|
+			output << (input ? input.upcase : nil)
+		end
+
+		subject.output do |output|
+			out << output
+		end
+		subject.input do |input|
+			input << nil
+			input << 'hello'
+			input << nil
+		end
+
+		out.should == [nil, 'HELLO', nil]
+	end
+
+	it 'may not produce value for input' do
+		out = []
+		subject = Filter.new do |input, output|
+			output << input.upcase if input
+		end
+
+		subject.output do |output|
+			out << output
+		end
+		subject.input do |input|
+			input << nil
+			input << 'hello'
+			input << nil
+		end
+
+		out.should == ['HELLO']
 	end
 
 	it 'should output header before filtering' do
@@ -57,12 +111,12 @@ describe Filter do
 
 	describe 'chaining' do
 		it 'should allow chaining of filters' do
-			upcase_filter = Filter.new do |input|
-				input.upcase
+			upcase_filter = Filter.new do |input, output|
+				output << input.upcase
 			end
 
-			space_filter = Filter.new do |input|
-				input + ' '
+			space_filter = Filter.new do |input, output|
+				output << input + ' '
 			end
 
 			out = ''
@@ -83,8 +137,8 @@ describe Filter do
 		end
 
 		it 'should call all header and footer handlers' do
-			upcase_filter = Filter.new do |input|
-				input.upcase
+			upcase_filter = Filter.new do |input, output|
+				output << input.upcase
 			end
 			upcase_filter.header do
 				'aa'
@@ -93,8 +147,8 @@ describe Filter do
 				'bb'
 			end
 
-			bracket_filter = Filter.new do |input|
-				'(' + input + ')'
+			bracket_filter = Filter.new do |input, output|
+				output << '(' + input + ')'
 			end
 			bracket_filter.header do
 				'xx'
@@ -122,16 +176,16 @@ describe Filter do
 
 	describe 'nesting' do
 		it 'should allow nesting many filters' do
-			upcase_filter = Filter.new do |input|
-				input.upcase
+			upcase_filter = Filter.new do |input, output|
+				output << input.upcase
 			end
 
-			bracket_filter = Filter.new do |input|
-				'(' + input + ')'
+			bracket_filter = Filter.new do |input, output|
+				output << '(' + input + ')'
 			end
 
-			space_filter = Filter.new do |input|
-				input + ' '
+			space_filter = Filter.new do |input, output|
+				output << input + ' '
 			end
 
 			upcase_filter.nest(bracket_filter)
@@ -150,8 +204,8 @@ describe Filter do
 		end
 
 		it 'should call all header and footer handlers' do
-			upcase_filter = Filter.new do |input|
-				input.upcase
+			upcase_filter = Filter.new do |input, output|
+				output << input.upcase
 			end
 			upcase_filter.header do
 				'aa'
@@ -160,8 +214,8 @@ describe Filter do
 				'bb'
 			end
 
-			bracket_filter = Filter.new do |input|
-				'(' + input + ')'
+			bracket_filter = Filter.new do |input, output|
+				output << '(' + input + ')'
 			end
 			bracket_filter.header do
 				'xx'
@@ -170,8 +224,8 @@ describe Filter do
 				'zz'
 			end
 
-			space_filter = Filter.new do |input|
-				input + ' '
+			space_filter = Filter.new do |input, output|
+				output << input + ' '
 			end
 			space_filter.header do |input|
 				'>'

@@ -2,6 +2,7 @@ require 'logger'
 require_relative 'string_hex'
 require_relative 'cipher_selector'
 require_relative 'filter'
+require_relative 'block_processor'
 
 class Crypter < Filter
 	class Processor
@@ -59,8 +60,8 @@ class Crypter < Filter
 			@log.debug "Padding disabled"
 		end
 
-		super() do |input|
-			@cipher.update input
+		super() do |input, output|
+			output << @cipher.update(input)
 		end
 		footer do 
 			@cipher.final
@@ -77,6 +78,7 @@ class Encrypter < Filter
 			cipher.encrypt
 		end
 		nest(@crypter)
+		#nest(LoggingBlockProcessor.new(options[:log]))
 	end
 
 	def initialization_vector

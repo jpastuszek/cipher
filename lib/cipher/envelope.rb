@@ -42,9 +42,7 @@ class Envelope
 			header do
 				SDL4R.dump(@header) + "\n"
 			end
-			super() do |input|
-				input # pass through
-			end
+			super() {|input, output| output << input}
 		end
 
 		class Loader < Filter
@@ -52,7 +50,7 @@ class Envelope
 				header = nil
 				header_data = ''
 
-				super() do |input|
+				super() do |input, output|
 					unless header
 						header_data << input
 						if header_data.include? "\n\n"
@@ -63,11 +61,10 @@ class Envelope
 							header.session_key = header.session_key.from_hex if header.session_key
 
 							@on_header.call(header) if @on_header
-							next input
+							output << input
 						end
-						next nil
 					else
-						input
+						output << input
 					end
 				end
 			end

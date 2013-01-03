@@ -1,12 +1,24 @@
 class Filter
 	class InputProcessor
+		class Collector
+			def initialize(&output)
+				@output = output
+			end
+
+			def <<(input_data)
+				@output.call(input_data)
+			end
+		end
+
 		def initialize(input_filter, &output)
-			@input_filter = input_filter || ->(i){i}
-			@output = output
+			@input_filter = input_filter || ->(i, o){o << i}
+			@collector = Collector.new do |out_data|
+				output.call out_data
+			end
 		end
 
 		def <<(input_data)
-			@output.call(@input_filter.call(input_data) || return)
+			@input_filter.call(input_data, @collector)
 		end
 	end
 
