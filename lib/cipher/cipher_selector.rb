@@ -18,11 +18,12 @@ class CipherInfo
 end
 
 class ModeInfo < CipherInfo
-	def initialize(cipher_info, mode, sub_block_size, need_initialization_vector)
+	def initialize(cipher_info, mode, sub_block_size, need_initialization_vector, need_custom_sub_block_processor)
 		super(cipher_info.cipher)
 		@mode = mode
 		@sub_block_size = sub_block_size
 		@need_initialization_vector = need_initialization_vector
+		@need_custom_sub_block_processor = need_custom_sub_block_processor
 	end
 
 	attr_reader :mode
@@ -31,11 +32,15 @@ class ModeInfo < CipherInfo
 	def need_initialization_vector?
 		@need_initialization_vector
 	end
+
+	def need_custom_sub_block_processor?
+		@need_custom_sub_block_processor
+	end
 end
 
 class CipherSelectorInfo < ModeInfo
 	def initialize(mode_info, openssl_cipher_name, key_size, need_key_size)
-		super(mode_info, mode_info.mode, mode_info.sub_block_size, mode_info.need_initialization_vector?)
+		super(mode_info, mode_info.mode, mode_info.sub_block_size, mode_info.need_initialization_vector?, mode_info.need_custom_sub_block_processor?)
 		@openssl_cipher_name = openssl_cipher_name
 		@key_size = key_size
 		@need_key_size = need_key_size
@@ -155,6 +160,7 @@ class ModeSelector < CipherInfo
 	end
 
 	def mode(mode, sub_block_size = :full_block)
+		need_custom_sub_block_processor = false
 		key_size_tree = 
 		if @mode_tree.include? [mode, sub_block_size] # have preset
 			@mode_tree[[mode, sub_block_size]] 
@@ -164,6 +170,7 @@ class ModeSelector < CipherInfo
 					sub_block_size % 8 != 0
 				fail "unsupported sub block size #{sub_block_size} for mode #{mode} for cipher #{cipher}"
 			end
+			need_custom_sub_block_processor = true
 			@mode_tree[['ECB', :full_block]] 
 		else
 			fail "unsupported mode #{mode} for cipher #{cipher}"
@@ -178,7 +185,7 @@ class ModeSelector < CipherInfo
 			true
 		end
 
-		KeyLengthSelector.new(self, mode, sub_block_size, need_initialization_vector, key_size_tree)
+		KeyLengthSelector.new(self, mode, sub_block_size, need_initialization_vector, need_custom_sub_block_processor, key_size_tree)
 	end
 
 	def preferred_mode(mode, sub_block_size = :full_block)
@@ -203,8 +210,8 @@ class ModeSelector < CipherInfo
 end
 
 class KeyLengthSelector < ModeInfo
-	def initialize(cipher_info, mode, sub_block_size, need_initialization_vector, key_size_tree)
-		super cipher_info, mode, sub_block_size, need_initialization_vector
+	def initialize(cipher_info, mode, sub_block_size, need_initialization_vector, need_custom_sub_block_processor, key_size_tree)
+		super cipher_info, mode, sub_block_size, need_initialization_vector, need_custom_sub_block_processor
 		@key_size_tree = key_size_tree
 	end
 
