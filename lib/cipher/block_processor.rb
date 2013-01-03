@@ -26,6 +26,7 @@ class BlockSlicer < Filter
 		end
 
 		footer do
+			next if buffer.empty?
 			buffer
 		end
 	end

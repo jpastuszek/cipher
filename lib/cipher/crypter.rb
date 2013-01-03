@@ -55,10 +55,13 @@ class Crypter < Filter
 		end
 
 		super() do |input, output|
-			output << @cipher.update(input)
+			out = @cipher.update(input)
+			output << out unless out.empty? # skip empty result
 		end
 		footer do 
-			@cipher.final
+			final = @cipher.final
+			next if final.empty? # skip empty string final
+			final
 		end
 	end
 

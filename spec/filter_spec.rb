@@ -92,6 +92,21 @@ describe Filter do
 		out.should == '>> HELLO WORLD'
 	end
 
+	it 'should not output nil header value' do
+		out = []
+		subject.output do |output|
+			out << output
+		end
+		subject.header do
+			nil
+		end
+		subject.input do |input|
+			input << 'hello'
+		end
+
+		out.should == ['HELLO']
+	end
+
 	it 'should output footer after filtering' do
 		out = ''
 		subject.output do |output|
@@ -107,6 +122,21 @@ describe Filter do
 		end
 
 		out.should == 'HELLO WORLD <<'
+	end
+
+	it 'should not output nil footer value' do
+		out = []
+		subject.output do |output|
+			out << output
+		end
+		subject.footer do
+			nil
+		end
+		subject.input do |input|
+			input << 'hello'
+		end
+
+		out.should == ['HELLO']
 	end
 
 	describe 'chaining' do

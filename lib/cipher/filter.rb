@@ -45,9 +45,17 @@ class Filter
 
 	def input
 		@on_open and @on_open.each{|callback| callback.call}
-		@send.call @header_input.call if @header_input
+		
+		if @header_input and header = @header_input.call 
+			@send.call header
+		end
+
 		yield @input_processor
-		@send.call @footer_input.call if @footer_input
+
+		if @footer_input and footer = @footer_input.call
+			@send.call footer
+		end
+		
 		@on_close and @on_close.each{|callback| callback.call}
 		self
 	end
