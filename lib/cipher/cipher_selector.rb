@@ -159,22 +159,30 @@ class ModeSelector < CipherInfo
 		@mode_tree.keys
 	end
 
-	def mode(mode, sub_block_size = :full_block)
+	def mode(mode, sub_block_size = :full_block, options = {})
 		need_custom_sub_block_processor = false
-		key_size_tree = 
-		if @mode_tree.include? [mode, sub_block_size] # have preset
-			@mode_tree[[mode, sub_block_size]] 
-		elsif @mode_tree.include? [mode, :custom]
-			if sub_block_size > block_size or 
-					sub_block_size < 8 or 
-					sub_block_size % 8 != 0
-				fail "unsupported sub block size #{sub_block_size} for mode #{mode} for cipher #{cipher}"
+		key_size_tree =  nil
+
+		unless options[:prefer_custom_sub_block_processor]
+			key_size_tree = 
+			if natively_supported? mode, sub_block_size
+				@mode_tree[[mode, sub_block_size]] 
+			elsif custom_supported? mode, sub_block_size
+				valid_custom_sub_block_size? sub_block_size or fail "unsupported sub block size #{sub_block_size} for mode #{mode} for cipher #{cipher}"
+				need_custom_sub_block_processor = true
+				@mode_tree[['ECB', :full_block]] 
 			end
-			need_custom_sub_block_processor = true
-			@mode_tree[['ECB', :full_block]] 
 		else
-			fail "unsupported mode #{mode} for cipher #{cipher}"
+			key_size_tree = 
+			if custom_supported? mode, sub_block_size and valid_custom_sub_block_size? sub_block_size
+				need_custom_sub_block_processor = true
+				@mode_tree[['ECB', :full_block]] 
+			elsif natively_supported? mode, sub_block_size
+				@mode_tree[[mode, sub_block_size]] 
+			end
 		end
+
+		fail "unsupported mode #{mode} for cipher #{cipher}" unless key_size_tree
 
 		sub_block_size = block_size if sub_block_size == :full_block
 
@@ -206,6 +214,24 @@ class ModeSelector < CipherInfo
 				a.first <=> b.first
 			end.first
 		end
+	end
+
+	private
+
+	def natively_supported?(mode, sub_block_size)
+		@mode_tree.include? [mode, sub_block_size]
+	end
+
+	def custom_supported?(mode, sub_block_size)
+		@mode_tree.include? [mode, :custom]
+	end
+
+	def valid_custom_sub_block_size?(sub_block_size)
+		not (
+			sub_block_size > block_size or 
+			sub_block_size < 8 or 
+			sub_block_size % 8 != 0
+		)
 	end
 end
 
