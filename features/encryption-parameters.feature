@@ -48,8 +48,14 @@ Feature: Encrypting and decrypting streams with different encryption parameters
 		Then decipher output should be the same as cipher input
 
 	@encryption @aes @custom-to-native-sub-block @cfb
-	Scenario: Encryption with AES 128 CFB-8
+	Scenario: Encryption with AES 128 CFB-8 (custom encryption, native decryption)
 		Given cipher argument -c AES -k 128 -m CFB-8 -B
+		When I run cipher with output sent through decipher
+		Then decipher output should be the same as cipher input
+
+	@encryption @aes @custom-to-native-sub-block @cfb
+	Scenario: Encryption with AES 128 CFB (custom encryption, native decryption)
+		Given cipher argument -c AES -k 128 -m CFB -B
 		When I run cipher with output sent through decipher
 		Then decipher output should be the same as cipher input
 
@@ -62,6 +68,12 @@ Feature: Encrypting and decrypting streams with different encryption parameters
 	@encryption @aes @custom-sub-block @cfb
 	Scenario: Encryption with AES 128 CFB-64
 		Given cipher argument -c AES -k 128 -m CFB-64
+		When I run cipher with output sent through decipher
+		Then decipher output should be the same as cipher input
+
+	@encryption @aes @custom-to-native-sub-block @ofb
+	Scenario: Encryption with AES 128 OFB (custom encryption, native decryption)
+		Given cipher argument -c AES -k 128 -m OFB -B
 		When I run cipher with output sent through decipher
 		Then decipher output should be the same as cipher input
 

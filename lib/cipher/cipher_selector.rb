@@ -229,7 +229,7 @@ class ModeSelector < CipherInfo
 	end
 
 	def valid_custom_sub_block_size?(sub_block_size)
-		not (
+		sub_block_size == :full_block or not (
 			sub_block_size > block_size or 
 			sub_block_size < 8 or 
 			sub_block_size % 8 != 0
