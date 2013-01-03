@@ -4,9 +4,10 @@ module BlockCipher
 			def initialize(cipher_selector, key, options = {})
 				@log = options[:log] || Logger.new('out.log')
 
-				@initialization_vector = options.delete(:initialization_vector)
-				# TODO: generate
-				@initialization_vector ||= 'iv' * (cipher_selector.block_size / 8 / 2)
+				@initialization_vector = (
+					options.delete(:initialization_vector) or
+					OpenSSL::Random.random_bytes(cipher_selector.block_size / 8)
+				)
 
 				@sub_block_length = cipher_selector.sub_block_size / 8
 
