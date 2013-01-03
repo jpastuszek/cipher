@@ -189,7 +189,7 @@ describe CipherSelector do
 		it 'should use ECB preset for sub block preset is not available' do
 			cipher = CipherSelector.new.cipher('AES').mode('CFB', 16).key_size(128)
 			cipher.openssl_cipher_name.should == 'AES-128-ECB'
-			cipher.need_initialization_vector?.should be_true
+			cipher.need_initialization_vector?.should be_false
 			cipher.need_custom_sub_block_processor?.should be_true
 		end
 
@@ -201,7 +201,7 @@ describe CipherSelector do
 
 			cipher = CipherSelector.new.cipher('AES').mode('CFB', 8, prefer_custom_sub_block_processor: true).key_size(128)
 			cipher.openssl_cipher_name.should == 'AES-128-ECB'
-			cipher.need_initialization_vector?.should be_true
+			cipher.need_initialization_vector?.should be_false
 			cipher.need_custom_sub_block_processor?.should be_true
 		end
 	end

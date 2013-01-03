@@ -163,6 +163,13 @@ class ModeSelector < CipherInfo
 		need_custom_sub_block_processor = false
 		key_size_tree =  nil
 
+		need_initialization_vector = 
+		if ['ECB', 'none'].include? mode
+			false
+		else
+			true
+		end
+
 		unless options[:prefer_custom_sub_block_processor]
 			key_size_tree = 
 			if natively_supported? mode, sub_block_size
@@ -170,12 +177,14 @@ class ModeSelector < CipherInfo
 			elsif custom_supported? mode, sub_block_size
 				valid_custom_sub_block_size? sub_block_size or fail "unsupported sub block size #{sub_block_size} for mode #{mode} for cipher #{cipher}"
 				need_custom_sub_block_processor = true
+				need_initialization_vector = false
 				@mode_tree[['ECB', :full_block]] 
 			end
 		else
 			key_size_tree = 
 			if custom_supported? mode, sub_block_size and valid_custom_sub_block_size? sub_block_size
 				need_custom_sub_block_processor = true
+				need_initialization_vector = false
 				@mode_tree[['ECB', :full_block]] 
 			elsif natively_supported? mode, sub_block_size
 				@mode_tree[[mode, sub_block_size]] 
@@ -185,13 +194,6 @@ class ModeSelector < CipherInfo
 		fail "unsupported mode #{mode} for cipher #{cipher}" unless key_size_tree
 
 		sub_block_size = block_size if sub_block_size == :full_block
-
-		need_initialization_vector = 
-		if ['ECB', 'none'].include? mode
-			false
-		else
-			true
-		end
 
 		KeyLengthSelector.new(self, mode, sub_block_size, need_initialization_vector, need_custom_sub_block_processor, key_size_tree)
 	end
