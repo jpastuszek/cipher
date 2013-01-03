@@ -1,4 +1,4 @@
-require_relative '../lib/cipher/cipher_selector'
+require_relative 'spec_helper'
 
 describe CipherSelector do
 	it 'should provide list of available ciphers' do

@@ -9,28 +9,23 @@ class LoggingBlockProcessor < Filter
 end
 
 class BlockSlicer < Filter
-	def initialize(size)
-		slice_length = (size.to_f / 8).ceil
-		offset = 0
-		overflow = ''
+	def initialize(slice_length)
+		buffer = ''
 
 		super() do |input, output|
-			if overflow_length = overflow.length > 0
-				overflow_slize_length = slice_length - overflow_length
-				output << overflow + input.byteslice(0, overflow_slize_length)
-				offset = overflow_slize_length
-			end
+			buffer += input
+			next if buffer.length < slice_length
 
-			slices = (input.length - offset) / length
+			slices = buffer.length / slice_length
 			slices.times do |slice_no|
-				output << input.byteslice(offset + slice_no * slice_length, slice_length)
+				output << buffer.byteslice(slice_no * slice_length, slice_length)
 			end
 
-			overflow = input.byteslice(offset + slices * slice_length, slice_length)
+			buffer = buffer.byteslice(slices * slice_length, buffer.length % slice_length) || ''
 		end
 
 		footer do
-			overflow
+			buffer
 		end
 	end
 end

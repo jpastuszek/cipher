@@ -1,9 +1,3 @@
-require 'logger'
-require_relative 'string_hex'
-require_relative 'cipher_selector'
-require_relative 'filter'
-require_relative 'block_processor'
-
 class Crypter < Filter
 	class Processor
 		def initialize(cipher, &sink)
@@ -78,6 +72,7 @@ class Encrypter < Filter
 			cipher.encrypt
 		end
 		nest(@crypter)
+		#nest(BlockSlicer.new(32))
 		#nest(LoggingBlockProcessor.new(options[:log]))
 	end
 

@@ -1,4 +1,4 @@
-require_relative '../lib/cipher/filter'
+require_relative 'spec_helper'
 
 describe Filter do
 	subject do

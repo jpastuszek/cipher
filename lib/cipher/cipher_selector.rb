@@ -1,5 +1,3 @@
-require 'openssl'
-
 class CipherInfo
 	def initialize(cipher)
 		@cipher = cipher

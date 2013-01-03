@@ -1,5 +1,4 @@
-require_relative '../lib/cipher/io_crypter'
-require_relative '../lib/cipher/string_base64'
+require_relative 'spec_helper'
 
 describe IOEncrypter do
 	it 'should encrypt input stream to output stream' do

@@ -1,5 +1,3 @@
-require_relative 'string_digest'
-
 class SessionKey < String
 	def self.generate(key_size)
 		self.new(OpenSSL::Random.random_bytes((key_size.to_f / 8).ceil))

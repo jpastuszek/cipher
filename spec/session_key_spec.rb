@@ -1,4 +1,4 @@
-require_relative '../lib/cipher/session_key'
+require_relative 'spec_helper'
 
 describe SessionKey do
 	it 'should be of given length in bits' do

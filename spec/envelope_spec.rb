@@ -1,4 +1,4 @@
-require_relative '../lib/cipher/envelope'
+require_relative 'spec_helper'
 
 describe Envelope::SDL do
 	it 'should generate message' do

@@ -1,6 +1,4 @@
 require 'sdl4r'
-require_relative 'string_hex'
-require_relative 'filter'
 
 class Envelope
 	class SDL < Filter
