@@ -70,19 +70,31 @@ class Crypter < Filter
 	attr_reader :initialization_vector
 end
 
-class Encrypter < Crypter
+class Encrypter < Filter
 	def initialize(cipher_selector, key, options = {})
-		super do |cipher|
+		super()
+		@crypter = Crypter.new(cipher_selector, key, options) do |cipher|
 			cipher.encrypt
 		end
+		nest(@crypter)
+	end
+
+	def initialization_vector
+		@crypter.initialization_vector
 	end
 end
 
-class Decrypter < Crypter
+class Decrypter < Filter
 	def initialize(cipher_selector, key, options = {})
-		super(cipher_selector, key, options) do |cipher|
+		super()
+		@crypter = Crypter.new(cipher_selector, key, options) do |cipher|
 			cipher.decrypt
 		end
+		nest(@crypter)
+	end
+
+	def initialization_vector
+		@crypter.initialization_vector
 	end
 end
 
