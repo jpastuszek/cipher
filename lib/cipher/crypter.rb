@@ -68,12 +68,22 @@ end
 class Encrypter < Filter
 	def initialize(cipher_selector, key, options = {})
 		super()
-		@crypter = Crypter.new(cipher_selector, key, options) do |cipher|
-			cipher.encrypt
+
+		@crypter = if cipher_selector.need_custom_sub_block_processor?
+			nest(BlockSlicer.new(cipher_selector.block_size))
+			nest(LoggingBlockProcessor.new(options[:log]))
+			if cipher_selector.mode == 'CFB'
+				BlockCipher::CFB::Encrypter.new(cipher_selector, key, options)
+			else
+				raise NotImplementedError, 'custom sub block processor not supported'
+			end
+		else
+			Crypter.new(cipher_selector, key, options) do |cipher|
+				cipher.encrypt
+			end
 		end
-		nest(@crypter)
-		#nest(BlockSlicer.new(32))
-		#nest(LoggingBlockProcessor.new(options[:log]))
+
+		nest @crypter
 	end
 
 	def initialization_vector
@@ -84,6 +94,9 @@ end
 class Decrypter < Filter
 	def initialize(cipher_selector, key, options = {})
 		super()
+		if cipher_selector.need_custom_sub_block_processor?
+			raise NotImplementedError, 'custom sub block processor not supported'
+		end
 		@crypter = Crypter.new(cipher_selector, key, options) do |cipher|
 			cipher.decrypt
 		end

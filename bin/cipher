@@ -62,6 +62,9 @@ settings = CLI.new do
 	switch :no_padding,
 		short: :P,
 		description: 'do not add/expect padding at the end of encrypted stream'
+	switch :prefer_custom_sub_block_processor,
+		short: :B,
+		description: 'use custom sub block processor when possible (for OFB and CFB modes)'
 end.parse! do |settings|
 	cipher_selector = CipherSelector.new
 
@@ -91,9 +94,9 @@ end.parse! do |settings|
 		sub_block_size = $4 ? $4.to_i : :full_block
 
 		if prefer
-			mode_selctor.preferred_mode(mode, sub_block_size)
+			mode_selctor.preferred_mode(mode, sub_block_size, prefer_custom_sub_block_processor: settings.prefer_custom_sub_block_processor)
 		else
-			mode_selctor.mode(mode, sub_block_size)
+			mode_selctor.mode(mode, sub_block_size, prefffer_custom_sub_block_processor: settings.prefer_custom_sub_block_processor)
 		end
 	else
 		fail 'bad mode format'

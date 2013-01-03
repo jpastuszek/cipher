@@ -196,13 +196,13 @@ class ModeSelector < CipherInfo
 		KeyLengthSelector.new(self, mode, sub_block_size, need_initialization_vector, need_custom_sub_block_processor, key_size_tree)
 	end
 
-	def preferred_mode(mode, sub_block_size = :full_block)
+	def preferred_mode(mode, sub_block_size = :full_block, options = {})
 		if modes.include? [mode, sub_block_size]
-			mode(mode)
+			mode(mode, sub_block_size, options)
 		elsif modes.include? ['CBC', :full_block]
-			mode('CBC')
+			mode('CBC', sub_block_size, options)
 		elsif modes.include? ['none', :full_block]
-			mode('none')
+			mode('none', sub_block_size, options)
 		else
 			modes.sort do |a, b|
 				next a.first <=> b.first if a.last == :full_block and b.last == :full_block

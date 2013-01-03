@@ -1,7 +1,7 @@
 class LoggingBlockProcessor < Filter
 	def initialize(log)
 		super() do |input, output|
-			log.debug "crypt block: #{input.inspect}" if log
+			log.debug "crypt block: #{input.to_hex}" if log
 			log.debug "crypt block length: #{input.length}" if log
 			output << input
 		end
@@ -9,7 +9,8 @@ class LoggingBlockProcessor < Filter
 end
 
 class BlockSlicer < Filter
-	def initialize(slice_length)
+	def initialize(slice_size)
+		slice_length = (slice_size.to_f / 8).ceil
 		buffer = ''
 
 		super() do |input, output|
