@@ -1,7 +1,7 @@
 require 'ostruct'
 
 module BlockCipher
-	module CFB
+	class CFB < Filter
 		class State < OpenStruct
 			def initialize(initialization_vector)
 				super()
@@ -55,52 +55,39 @@ module BlockCipher
 			end
 		end
 
-		class Encrypter < Filter
-			def initialize(cipher_selector, key, options = {})
-				@log = options[:log] || Logger.new('out.log')
+		def initialize(cipher_selector, key, options = {})
+			@log = options[:log] || Logger.new('out.log')
 
-				@initialization_vector = (
-					options.delete(:initialization_vector) or
-					OpenSSL::Random.random_bytes(cipher_selector.block_size / 8)
-				)
-				@log.debug "Using initialization vector: #{initialization_vector.to_hex}"
+			@initialization_vector = (
+				options.delete(:initialization_vector) or
+				OpenSSL::Random.random_bytes(cipher_selector.block_size / 8)
+			)
+			@log.debug "Using initialization vector: #{initialization_vector.to_hex}"
 
-				sub_block_length = cipher_selector.sub_block_size / 8
+			sub_block_length = cipher_selector.sub_block_size / 8
 
-				state = State.new(@initialization_vector)
+			@state = State.new(@initialization_vector)
 
-				super()
-				nest InputShiftRegisterSwitcher.new(state)
-				nest ECBEncrypter.new(cipher_selector, key, options)
-				nest XOR.new(state, sub_block_length)
-				nest CiphertextShifter.new(state)
-			end
-
-			attr_reader :initialization_vector
+			super()
+			nest InputShiftRegisterSwitcher.new(@state)
+			nest ECBEncrypter.new(cipher_selector, key, options)
+			nest XOR.new(@state, sub_block_length)
 		end
 
-		class Decrypter < Filter
+		attr_reader :initialization_vector
+
+		class Encrypter < CFB
 			def initialize(cipher_selector, key, options = {})
-				@log = options[:log] || Logger.new('out.log')
-
-				@initialization_vector = (
-					options.delete(:initialization_vector) or
-					OpenSSL::Random.random_bytes(cipher_selector.block_size / 8)
-				)
-				@log.debug "Using initialization vector: #{initialization_vector.to_hex}"
-
-				sub_block_length = cipher_selector.sub_block_size / 8
-
-				state = State.new(@initialization_vector)
-
-				super()
-				nest InputShiftRegisterSwitcher.new(state)
-				nest ECBEncrypter.new(cipher_selector, key, options)
-				nest XOR.new(state, sub_block_length)
-				nest InputShifter.new(state)
+				super
+				nest CiphertextShifter.new(@state)
 			end
+		end
 
-			attr_reader :initialization_vector
+		class Decrypter < CFB
+			def initialize(cipher_selector, key, options = {})
+				super
+				nest InputShifter.new(@state)
+			end
 		end
 	end
 end
