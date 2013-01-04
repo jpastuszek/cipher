@@ -1,7 +1,7 @@
 require_relative 'spec_helper'
 describe BlockSlicer do
 	subject do
-		BlockSlicer.new(4 * 8)
+		BlockSlicer.new(4)
 	end
 
 	it 'should slice up input data into given size chunks' do

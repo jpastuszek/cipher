@@ -69,6 +69,7 @@ module BlockCipher
 			@state = State.new(@initialization_vector)
 
 			super()
+			nest BlockSlicer.new(sub_block_length)
 			nest InputShiftRegisterSwitcher.new(@state)
 			nest ECBEncrypter.new(cipher_selector, key, options)
 			nest XOR.new(@state, sub_block_length)

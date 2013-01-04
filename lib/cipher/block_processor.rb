@@ -9,8 +9,7 @@ class LoggingBlockProcessor < Filter
 end
 
 class BlockSlicer < Filter
-	def initialize(slice_size)
-		slice_length = (slice_size.to_f / 8).ceil
+	def initialize(slice_length)
 		buffer = ''
 
 		super() do |input, output|

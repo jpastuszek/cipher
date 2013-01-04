@@ -73,7 +73,6 @@ class Encrypter < Filter
 		super()
 
 		@crypter = if cipher_selector.need_custom_sub_block_processor?
-			nest(BlockSlicer.new(cipher_selector.sub_block_size))
 			if cipher_selector.mode == 'CFB'
 				BlockCipher::CFB::Encrypter.new(cipher_selector, key, options)
 			else
@@ -97,7 +96,6 @@ class Decrypter < Filter
 	def initialize(cipher_selector, key, options = {})
 		super()
 		@crypter = if cipher_selector.need_custom_sub_block_processor?
-			nest(BlockSlicer.new(cipher_selector.sub_block_size))
 			if cipher_selector.mode == 'CFB'
 				BlockCipher::CFB::Decrypter.new(cipher_selector, key, options)
 			else
