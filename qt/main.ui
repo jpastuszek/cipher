@@ -37,14 +37,14 @@
             </property>
             <layout class="QHBoxLayout" name="horizontalLayout_3">
              <item>
-              <widget class="QLineEdit" name="output_file_line">
+              <widget class="QLineEdit" name="encryption_input_file_path">
                <property name="readOnly">
                 <bool>true</bool>
                </property>
               </widget>
              </item>
              <item>
-              <widget class="QPushButton" name="output_file_button">
+              <widget class="QPushButton" name="encryption_input_file_button">
                <property name="text">
                 <string>Input File...</string>
                </property>
@@ -193,14 +193,14 @@
             </property>
             <layout class="QHBoxLayout" name="horizontalLayout_4">
              <item>
-              <widget class="QLineEdit" name="input_file_line">
+              <widget class="QLineEdit" name="decryption_input_file_path">
                <property name="readOnly">
                 <bool>true</bool>
                </property>
               </widget>
              </item>
              <item>
-              <widget class="QPushButton" name="input_file_button">
+              <widget class="QPushButton" name="decryption_input_file_button">
                <property name="text">
                 <string>Input File...</string>
                </property>
@@ -332,6 +332,22 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>encryption_input_file_button</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>select_encryption_input_file()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>618</x>
+     <y>89</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>360</x>
+     <y>146</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>cipher_selected(QString)</slot>
@@ -339,5 +355,6 @@
   <slot>sub_block_size_selected(int)</slot>
   <slot>key_size_selected(int)</slot>
   <slot>encrypt()</slot>
+  <slot>select_encryption_input_file()</slot>
  </slots>
 </ui>

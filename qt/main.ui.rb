@@ -1,7 +1,7 @@
 =begin
 ** Form generated from reading ui file 'main.ui'
 **
-** Created: pt. sty 4 23:34:02 2013
+** Created: pt. sty 4 23:48:53 2013
 **      by: Qt User Interface Compiler version 4.8.4
 **
 ** WARNING! All changes made in this file will be lost when recompiling ui file!
@@ -18,8 +18,8 @@ class Ui_MainWindow
     attr_reader :verticalLayout_3
     attr_reader :groupBox_2
     attr_reader :horizontalLayout_3
-    attr_reader :output_file_line
-    attr_reader :output_file_button
+    attr_reader :encryption_input_file_path
+    attr_reader :encryption_input_file_button
     attr_reader :groupBox
     attr_reader :horizontalLayout_2
     attr_reader :label
@@ -40,8 +40,8 @@ class Ui_MainWindow
     attr_reader :verticalLayout_4
     attr_reader :groupBox_3
     attr_reader :horizontalLayout_4
-    attr_reader :input_file_line
-    attr_reader :input_file_button
+    attr_reader :decryption_input_file_path
+    attr_reader :decryption_input_file_button
     attr_reader :verticalSpacer_2
     attr_reader :horizontalLayout_6
     attr_reader :decryption_progress_bar
@@ -70,16 +70,16 @@ class Ui_MainWindow
     @groupBox_2.objectName = "groupBox_2"
     @horizontalLayout_3 = Qt::HBoxLayout.new(@groupBox_2)
     @horizontalLayout_3.objectName = "horizontalLayout_3"
-    @output_file_line = Qt::LineEdit.new(@groupBox_2)
-    @output_file_line.objectName = "output_file_line"
-    @output_file_line.readOnly = true
+    @encryption_input_file_path = Qt::LineEdit.new(@groupBox_2)
+    @encryption_input_file_path.objectName = "encryption_input_file_path"
+    @encryption_input_file_path.readOnly = true
 
-    @horizontalLayout_3.addWidget(@output_file_line)
+    @horizontalLayout_3.addWidget(@encryption_input_file_path)
 
-    @output_file_button = Qt::PushButton.new(@groupBox_2)
-    @output_file_button.objectName = "output_file_button"
+    @encryption_input_file_button = Qt::PushButton.new(@groupBox_2)
+    @encryption_input_file_button.objectName = "encryption_input_file_button"
 
-    @horizontalLayout_3.addWidget(@output_file_button)
+    @horizontalLayout_3.addWidget(@encryption_input_file_button)
 
 
     @verticalLayout_3.addWidget(@groupBox_2)
@@ -178,16 +178,16 @@ class Ui_MainWindow
     @groupBox_3.objectName = "groupBox_3"
     @horizontalLayout_4 = Qt::HBoxLayout.new(@groupBox_3)
     @horizontalLayout_4.objectName = "horizontalLayout_4"
-    @input_file_line = Qt::LineEdit.new(@groupBox_3)
-    @input_file_line.objectName = "input_file_line"
-    @input_file_line.readOnly = true
+    @decryption_input_file_path = Qt::LineEdit.new(@groupBox_3)
+    @decryption_input_file_path.objectName = "decryption_input_file_path"
+    @decryption_input_file_path.readOnly = true
 
-    @horizontalLayout_4.addWidget(@input_file_line)
+    @horizontalLayout_4.addWidget(@decryption_input_file_path)
 
-    @input_file_button = Qt::PushButton.new(@groupBox_3)
-    @input_file_button.objectName = "input_file_button"
+    @decryption_input_file_button = Qt::PushButton.new(@groupBox_3)
+    @decryption_input_file_button.objectName = "decryption_input_file_button"
 
-    @horizontalLayout_4.addWidget(@input_file_button)
+    @horizontalLayout_4.addWidget(@decryption_input_file_button)
 
 
     @verticalLayout_4.addWidget(@groupBox_3)
@@ -230,6 +230,7 @@ class Ui_MainWindow
     Qt::Object.connect(@sub_block_size_selector, SIGNAL('valueChanged(int)'), mainWindow, SLOT('sub_block_size_selected(int)'))
     Qt::Object.connect(@key_size_selector, SIGNAL('valueChanged(int)'), mainWindow, SLOT('key_size_selected(int)'))
     Qt::Object.connect(@encrypt_button, SIGNAL('clicked()'), mainWindow, SLOT('encrypt()'))
+    Qt::Object.connect(@encryption_input_file_button, SIGNAL('clicked()'), mainWindow, SLOT('select_encryption_input_file()'))
 
     @tabWidget.setCurrentIndex(0)
 
@@ -244,7 +245,7 @@ class Ui_MainWindow
     def retranslateUi(mainWindow)
     mainWindow.windowTitle = Qt::Application.translate("MainWindow", "MainWindow", nil, Qt::Application::UnicodeUTF8)
     @groupBox_2.title = Qt::Application.translate("MainWindow", "Input File", nil, Qt::Application::UnicodeUTF8)
-    @output_file_button.text = Qt::Application.translate("MainWindow", "Input File...", nil, Qt::Application::UnicodeUTF8)
+    @encryption_input_file_button.text = Qt::Application.translate("MainWindow", "Input File...", nil, Qt::Application::UnicodeUTF8)
     @groupBox.title = Qt::Application.translate("MainWindow", "Cipher Settings", nil, Qt::Application::UnicodeUTF8)
     @label.text = Qt::Application.translate("MainWindow", "Cipher", nil, Qt::Application::UnicodeUTF8)
     @label_2.text = Qt::Application.translate("MainWindow", "Mode", nil, Qt::Application::UnicodeUTF8)
@@ -253,7 +254,7 @@ class Ui_MainWindow
     @encrypt_button.text = Qt::Application.translate("MainWindow", "Encrypt...", nil, Qt::Application::UnicodeUTF8)
     @tabWidget.setTabText(@tabWidget.indexOf(@encryptionTab), Qt::Application.translate("MainWindow", "Encryption", nil, Qt::Application::UnicodeUTF8))
     @groupBox_3.title = Qt::Application.translate("MainWindow", "Input File", nil, Qt::Application::UnicodeUTF8)
-    @input_file_button.text = Qt::Application.translate("MainWindow", "Input File...", nil, Qt::Application::UnicodeUTF8)
+    @decryption_input_file_button.text = Qt::Application.translate("MainWindow", "Input File...", nil, Qt::Application::UnicodeUTF8)
     @decryption_button.text = Qt::Application.translate("MainWindow", "Decrypt...", nil, Qt::Application::UnicodeUTF8)
     @tabWidget.setTabText(@tabWidget.indexOf(@decryptionTab), Qt::Application.translate("MainWindow", "Decryption", nil, Qt::Application::UnicodeUTF8))
     end # retranslateUi

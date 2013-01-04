@@ -2,6 +2,7 @@
 
 require 'haddock'
 require 'logger'
+require 'pathname'
 require 'Qt4'
 require_relative '../lib/cipher'
 require_relative '../qt/main.ui'
@@ -144,11 +145,33 @@ class Main < Qt::MainWindow
 		$log.debug "Key size selected: #{key_size}"
 	end
 
+	slots 'select_encryption_input_file()'
+	def select_encryption_input_file
+		input_file = Qt::FileDialog.getOpenFileName(self, tr("File to encrypt"), "", "Any file (*)") or return
+		@u.encryption_input_file_path.setText input_file
+	end
 
 	slots 'encrypt()'
 	def encrypt
 		cipher_info = @key_size_selector.key_size(@u.key_size_selector.value)
 		$log.debug "Cipher info: cipher: #{cipher_info.cipher} mode: #{cipher_info.mode} sub block size: #{cipher_info.sub_block_size} key size: #{cipher_info.key_size} OpenSSL cipher name: #{cipher_info.openssl_cipher_name}"
+
+		input_file = Pathname.new(@u.encryption_input_file_path.text)
+		unless input_file.readable?
+			Qt::MessageBox::warning self, 'Input File', 'Please select encryption input file', Qt::MessageBox::Ok
+			return
+		end
+
+		output_file = Qt::FileDialog.getSaveFileName(self, tr("Encrypted file name"), "") or return
+		output_file = Pathname.new(output_file)
+
+		input_file.open 'r' do |input|
+			output_file.open 'w' do |output|
+				IOEncrypter.new(input, output, cipher_info, 'test')
+			end
+		end
+
+		Qt::MessageBox::information self, 'Success', "Encrypted file saved to ", Qt::MessageBox::Ok
 	end
 end
 
