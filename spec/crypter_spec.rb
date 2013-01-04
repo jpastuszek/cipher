@@ -133,5 +133,48 @@ describe Decrypter do
 
 		decrypted.should == 'a' * 4 * 16
 	end
+
+	describe 'custom sub block mode' do
+		describe 'CFB' do
+			describe 'encrypter' do
+				subject do
+					Encrypter.new(CipherSelector.new.cipher('AES').mode('CFB', 16).key_size(128), 'k' * 16, initialization_vector: 'iv' * 8)
+				end
+
+				it 'should encrypt data stream with given cipher specs and key' do
+					encrypted = ''
+					subject.output do |data|
+						encrypted << data
+					end
+
+					subject.input do |sink|
+						20.times do
+							sink << 'test'
+						end
+					end
+
+					encrypted.to_base64.should == 'RXYElmTlcEPWnJAukycUeIAf/Kzukdvr3SXp/54I41XKBhB29GhaNGtxbo9+V4bJQGs/sGNyzrLD8FAOtd9u2iaGq3WywLt4jjwiww6v9kU='
+				end
+			end
+			describe 'encrypter' do
+				subject do
+					Decrypter.new(CipherSelector.new.cipher('AES').mode('CFB', 16).key_size(128), 'k' * 16, initialization_vector: 'iv' * 8)
+				end
+
+				it 'should decrypt data stream' do
+					decrypted = ''
+					subject.output do |data|
+						decrypted << data
+					end
+
+					subject.input do |sink|
+						sink << 'RXYElmTlcEPWnJAukycUeIAf/Kzukdvr3SXp/54I41XKBhB29GhaNGtxbo9+V4bJQGs/sGNyzrLD8FAOtd9u2iaGq3WywLt4jjwiww6v9kU='.from_base64
+					end
+
+					decrypted.should == 'test' * 20
+				end
+			end
+		end
+	end
 end
 
