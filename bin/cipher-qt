@@ -171,7 +171,7 @@ class Main < Qt::MainWindow
 			end
 		end
 
-		Qt::MessageBox::information self, 'Success', "Encrypted file saved to ", Qt::MessageBox::Ok
+		Qt::MessageBox::about self, 'Success', "Encrypted file saved to #{output_file}"#, Qt::MessageBox::Ok
 	end
 end
 
