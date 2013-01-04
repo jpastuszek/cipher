@@ -74,9 +74,11 @@ class Encrypter < Filter
 
 		@crypter = if cipher_selector.need_custom_sub_block_processor?
 			if cipher_selector.mode == 'CFB'
-				BlockCipher::CFB::Encrypter.new(cipher_selector, key, options)
+				BlockCrypter::CFB::Encrypter.new(cipher_selector, key, options)
+			elsif cipher_selector.mode == 'OFB'
+				BlockCrypter::OFB::Encrypter.new(cipher_selector, key, options)
 			else
-				raise NotImplementedError, 'custom sub block processor not supported'
+				raise NotImplementedError, "custom sub block mode #{cipher_selector.mode} not supported"
 			end
 		else
 			Crypter.new(cipher_selector, key, options) do |cipher|
@@ -97,9 +99,11 @@ class Decrypter < Filter
 		super()
 		@crypter = if cipher_selector.need_custom_sub_block_processor?
 			if cipher_selector.mode == 'CFB'
-				BlockCipher::CFB::Decrypter.new(cipher_selector, key, options)
+				BlockCrypter::CFB::Decrypter.new(cipher_selector, key, options)
+			elsif cipher_selector.mode == 'OFB'
+				BlockCrypter::OFB::Decrypter.new(cipher_selector, key, options)
 			else
-				raise NotImplementedError, 'custom sub block processor not supported'
+				raise NotImplementedError, "custom sub block mode #{cipher_selector.mode} not supported"
 			end
 		else
 			Crypter.new(cipher_selector, key, options) do |cipher|

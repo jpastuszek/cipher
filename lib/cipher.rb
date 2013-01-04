@@ -11,6 +11,5 @@ require_relative 'cipher/filter'
 require_relative 'cipher/crypter'
 require_relative 'cipher/envelope'
 require_relative 'cipher/io_crypter'
-require_relative 'cipher/block_processor'
 require_relative 'cipher/block_crypter'
 

@@ -175,6 +175,47 @@ describe Decrypter do
 				end
 			end
 		end
+
+		describe 'OFB' do
+			describe 'encrypter' do
+				subject do
+					Encrypter.new(CipherSelector.new.cipher('AES').mode('OFB', 16).key_size(128), 'k' * 16, initialization_vector: 'iv' * 8)
+				end
+
+				it 'should encrypt data stream with given cipher specs and key' do
+					encrypted = ''
+					subject.output do |data|
+						encrypted << data
+					end
+
+					subject.input do |sink|
+						20.times do
+							sink << 'test'
+						end
+					end
+
+					encrypted.to_base64.should == 'RXZyM/DBXPBx8TOcO3DEp54/hZGha1myf0AMZyXPAy53W+SouaU3s1f9fDW5QLchnL8RTdCiJ8uwALnsvpGtFp5X+TjFcwdtU76ogPi4JnA='
+				end
+			end
+			describe 'encrypter' do
+				subject do
+					Decrypter.new(CipherSelector.new.cipher('AES').mode('OFB', 16).key_size(128), 'k' * 16, initialization_vector: 'iv' * 8)
+				end
+
+				it 'should decrypt data stream' do
+					decrypted = ''
+					subject.output do |data|
+						decrypted << data
+					end
+
+					subject.input do |sink|
+						sink << 'RXZyM/DBXPBx8TOcO3DEp54/hZGha1myf0AMZyXPAy53W+SouaU3s1f9fDW5QLchnL8RTdCiJ8uwALnsvpGtFp5X+TjFcwdtU76ogPi4JnA='.from_base64
+					end
+
+					decrypted.should == 'test' * 20
+				end
+			end
+		end
 	end
 end
 

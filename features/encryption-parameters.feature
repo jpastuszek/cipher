@@ -62,7 +62,7 @@ Feature: Encrypting and decrypting streams with different encryption parameters
 	@encryption @aes @native-to-custom-sub-block @cfb
 	Scenario: Encryption with AES 128 CFB-8 (native encryption, custom decryption)
 		Given cipher argument -c AES -k 128 -m CFB-8
-		Given decipher argument -B -D
+		Given decipher argument -B
 		When I run cipher with output sent through decipher
 		Then decipher output should be the same as cipher input
 

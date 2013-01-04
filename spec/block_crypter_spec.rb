@@ -1,7 +1,8 @@
 require_relative 'spec_helper'
-describe BlockSlicer do
+
+describe BlockCrypter::BlockSlicer do
 	subject do
-		BlockSlicer.new(4)
+		BlockCrypter::BlockSlicer.new(4)
 	end
 
 	it 'should slice up input data into given size chunks' do
