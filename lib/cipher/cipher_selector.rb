@@ -91,8 +91,9 @@ class CipherSelector
 			'CAST'		=> ['CAST', :custom, 'CBC', :full_block],
 			'BF'			=> ['BF', :custom, 'CBC', :full_block],
 			'DES-EDE' => ['DES-EDE', :custom, 'ECB', :full_block],
+			'DES-EDE3' => ['DES-EDE3', :custom, 'ECB', :full_block],
 			'DES3'		=> ['DES-EDE3', :custom, 'CBC', :full_block],
-			'DESX'		=> ['DES-EDE3', :custom, 'none', :full_block],
+			'DESX'		=> ['DESX', :custom, 'none', :full_block],
 			'RC4'			=> ['RC4', :custom, 'none', :full_block], # streaming cipher: no mode
 			'AES128'	=> ['AES', 128, 'CBC', :full_block],
 			'AES192'	=> ['AES', 192, 'CBC', :full_block],

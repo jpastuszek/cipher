@@ -6,14 +6,49 @@ require 'Qt4'
 require_relative '../lib/cipher'
 require_relative '../qt/main.ui'
 
+$log = Logger.new(STDERR)
+
+module ValuesSpinSelector
+	def valid_values=(arr)
+		@valid_values = arr
+	end
+
+	def validate(value, pos)
+		@valid_values or return Qt::Validator::Invalid
+		#$log.debug "validate: #{value.inspect}"
+		@valid_values.index(Integer(value)) and return Qt::Validator::Acceptable
+		Qt::Validator::Intermediate
+	rescue ArgumentError
+		Qt::Validator::Invalid
+	end
+
+	def stepBy(steps)
+		 @valid_values or return
+
+		valid_values =
+		if steps >= 0
+			@valid_values
+		else
+			steps = -steps
+			@valid_values.reverse
+		end
+
+		index = valid_values.index(value) or return
+		value = valid_values[index, steps + 1].last
+		setValue(value)
+	end
+end
+
 class Main < Qt::MainWindow
 	def initialize
 		super()
-		@log = Logger.new(STDERR)
 		@u = Ui_MainWindow.new
 		@u.setupUi(self)
 
         #directory = Qt::FileDialog.getExistingDirectory(self, tr("Find Files"), Qt::Dir.currentPath())
+		
+		@u.key_size_selector.extend ValuesSpinSelector
+		@u.sub_block_size_selector.extend ValuesSpinSelector
 
 		@cipher_selector = CipherSelector.new
 
@@ -23,9 +58,79 @@ class Main < Qt::MainWindow
 	end
 
 	slots 'cipher_selected(QString)'
-
 	def cipher_selected(cipher)
-		@log.debug "Cipher selected: #{cipher}"
+		cipher or return
+		$log.debug "Cipher selected: #{cipher}"
+
+		@u.mode_selector.clear
+
+		@mode_selector = @cipher_selector.cipher(cipher)
+		modes = @mode_selector.modes.map{|mode, sub_block_size| mode}.sort.uniq
+		$log.debug "Modes: #{modes}"
+
+		@mode_sub_block_sizes = {}
+		@mode_selector.modes.each do |mode, sub_block_size|
+			(@mode_sub_block_sizes[mode] ||= []) << sub_block_size
+		end
+		$log.debug "Mode sub block sizes: #{@mode_sub_block_sizes.inspect}"
+		$log.debug "Full block size: #{@mode_selector.block_size}"
+
+		if modes == ['none']
+			@u.mode_selector.setEnabled false
+		else
+			@u.mode_selector.setEnabled true
+		end
+		modes.each do |mode|
+			@u.mode_selector.addItem(mode)
+		end
+	end
+
+	slots 'mode_selected(QString)'
+	def mode_selected(mode)
+		mode or return
+		$log.debug "Mode selected: #{mode}"
+		@key_size_selector = @mode_selector.mode(mode)
+
+		# key sizes
+		@key_sizes = 
+		if @key_size_selector.key_sizes.include? :custom
+			$log.debug "Custom key size supported"
+			(8..512).step(8).to_a
+		else
+			@key_size_selector.key_sizes.sort
+		end
+		$log.debug "Key sizes: #{@key_sizes.inspect}"
+
+		if @key_sizes.length == 1
+			@u.key_size_selector.setValue @key_sizes.first
+			@u.key_size_selector.setEnabled false
+		else
+			@u.key_size_selector.setValue @key_size_selector.longest_key(256).key_size
+			@u.key_size_selector.valid_values = @key_sizes
+			@u.key_size_selector.setEnabled true
+		end
+
+		# sub block sizes
+		@sub_block_sizes =
+		if @mode_sub_block_sizes[mode].include? :custom
+			$log.debug "Custom mode size supported"
+			(8..@key_size_selector.block_size).step(8).to_a
+		else
+			@mode_sub_block_sizes[mode].map do |sub_block_size|
+				sub_block_size == :full_block ? @key_size_selector.block_size : sub_block_size
+			end.sort
+		end
+		@sub_block_sizes.unshift 1 if @mode_sub_block_sizes[mode].include? 1
+		$log.debug "Sub block sizes: #{@sub_block_sizes}"
+		
+		if @sub_block_sizes.length == 1
+			@u.sub_block_size_selector.setValue @sub_block_sizes.first
+			@u.sub_block_size_selector.setEnabled false
+		else
+			@u.sub_block_size_selector.setValue @sub_block_sizes.last
+			@u.sub_block_size_selector.valid_values = @sub_block_sizes
+			@u.sub_block_size_selector.setEnabled true
+		end
 	end
 end
 

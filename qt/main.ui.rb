@@ -1,7 +1,7 @@
 =begin
 ** Form generated from reading ui file 'main.ui'
 **
-** Created: pt. sty 4 17:50:55 2013
+** Created: pt. sty 4 22:33:38 2013
 **      by: Qt User Interface Compiler version 4.8.4
 **
 ** WARNING! All changes made in this file will be lost when recompiling ui file!
@@ -30,7 +30,6 @@ class Ui_MainWindow
     attr_reader :sub_block_size_selector
     attr_reader :label_4
     attr_reader :key_size_selector
-    attr_reader :key_size_custom_selector
     attr_reader :horizontalSpacer
     attr_reader :verticalSpacer
     attr_reader :horizontalLayout_8
@@ -130,18 +129,15 @@ class Ui_MainWindow
 
     @horizontalLayout_2.addWidget(@label_4)
 
-    @key_size_selector = Qt::ComboBox.new(@groupBox)
+    @key_size_selector = Qt::SpinBox.new(@groupBox)
     @key_size_selector.objectName = "key_size_selector"
+    @key_size_selector.enabled = true
+    @key_size_selector.readOnly = false
+    @key_size_selector.maximum = 2048
+    @key_size_selector.singleStep = 8
+    @key_size_selector.value = 256
 
     @horizontalLayout_2.addWidget(@key_size_selector)
-
-    @key_size_custom_selector = Qt::SpinBox.new(@groupBox)
-    @key_size_custom_selector.objectName = "key_size_custom_selector"
-    @key_size_custom_selector.maximum = 2048
-    @key_size_custom_selector.singleStep = 8
-    @key_size_custom_selector.value = 256
-
-    @horizontalLayout_2.addWidget(@key_size_custom_selector)
 
     @horizontalSpacer = Qt::SpacerItem.new(197, 20, Qt::SizePolicy::Expanding, Qt::SizePolicy::Minimum)
 
@@ -229,6 +225,7 @@ class Ui_MainWindow
 
     retranslateUi(mainWindow)
     Qt::Object.connect(@cipher_selector, SIGNAL('currentIndexChanged(QString)'), mainWindow, SLOT('cipher_selected(QString)'))
+    Qt::Object.connect(@mode_selector, SIGNAL('currentIndexChanged(QString)'), mainWindow, SLOT('mode_selected(QString)'))
 
     @tabWidget.setCurrentIndex(0)
 

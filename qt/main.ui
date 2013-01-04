@@ -109,10 +109,13 @@
             </widget>
            </item>
            <item>
-            <widget class="QComboBox" name="key_size_selector"/>
-           </item>
-           <item>
-            <widget class="QSpinBox" name="key_size_custom_selector">
+            <widget class="QSpinBox" name="key_size_selector">
+             <property name="enabled">
+              <bool>true</bool>
+             </property>
+             <property name="readOnly">
+              <bool>false</bool>
+             </property>
              <property name="maximum">
               <number>2048</number>
              </property>
@@ -262,8 +265,25 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>mode_selector</sender>
+   <signal>currentIndexChanged(QString)</signal>
+   <receiver>MainWindow</receiver>
+   <slot>mode_selected(QString)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>296</x>
+     <y>161</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>403</x>
+     <y>155</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>cipher_selected(QString)</slot>
+  <slot>mode_selected(QString)</slot>
  </slots>
 </ui>
