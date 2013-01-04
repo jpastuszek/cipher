@@ -35,7 +35,7 @@ Feature: Encrypting and decrypting streams with different encryption parameters
 		When I run cipher with output sent through decipher
 		Then decipher output should be the same as cipher input
 
-	@encryption @aes @native-sub-block @cfb @test
+	@encryption @aes @native-sub-block @cfb
 	Scenario: Encryption with AES 128 CFB-1
 		Given cipher argument -c AES -k 128 -m CFB-1
 		When I run cipher with output sent through decipher
@@ -59,6 +59,20 @@ Feature: Encrypting and decrypting streams with different encryption parameters
 		When I run cipher with output sent through decipher
 		Then decipher output should be the same as cipher input
 
+	@encryption @aes @native-to-custom-sub-block @cfb
+	Scenario: Encryption with AES 128 CFB-8 (native encryption, custom decryption)
+		Given cipher argument -c AES -k 128 -m CFB-8
+		Given decipher argument -B -D
+		When I run cipher with output sent through decipher
+		Then decipher output should be the same as cipher input
+
+	@encryption @aes @native-to-custom-sub-block @cfb
+	Scenario: Encryption with AES 128 CFB (native encryption, custom decryption)
+		Given cipher argument -c AES -k 128 -m CFB
+		Given decipher argument -B
+		When I run cipher with output sent through decipher
+		Then decipher output should be the same as cipher input
+
 	@encryption @aes @custom-sub-block @cfb
 	Scenario: Encryption with AES 128 CFB-16
 		Given cipher argument -c AES -k 128 -m CFB-16
@@ -68,6 +82,12 @@ Feature: Encrypting and decrypting streams with different encryption parameters
 	@encryption @aes @custom-sub-block @cfb
 	Scenario: Encryption with AES 128 CFB-64
 		Given cipher argument -c AES -k 128 -m CFB-64
+		When I run cipher with output sent through decipher
+		Then decipher output should be the same as cipher input
+
+	@encryption @aes @custom-sub-block @cfb
+	Scenario: Encryption with AES 128 CFB-80
+		Given cipher argument -c AES -k 128 -m CFB-80
 		When I run cipher with output sent through decipher
 		Then decipher output should be the same as cipher input
 

@@ -155,6 +155,7 @@ options[:log] = log
 options[:initialization_vector] = settings.initialization_vector if settings.initialization_vector
 options[:session_key] = settings.session_key if settings.session_key
 options[:padding] = ! settings.no_padding
+options[:prefer_custom_sub_block_processor] = settings.prefer_custom_sub_block_processor
 
 begin
 	unless settings.decrypt

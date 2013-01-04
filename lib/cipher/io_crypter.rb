@@ -65,7 +65,7 @@ class IODecrypter
 		envelope.on_header do |header|
 			cipher_selector = CipherSelector.new
 				.cipher(header.cipher)
-				.mode(header.mode, header.sub_block_size || :full_block)
+				.mode(header.mode, header.sub_block_size || :full_block, options)
 				.key_size(header.key_size)
 
 			key = SessionKey.from_encrypted_session_key(cipher_selector, password, header.session_key)
