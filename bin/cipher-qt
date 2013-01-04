@@ -1,0 +1,35 @@
+#!/usr/bin/env ruby
+
+require 'haddock'
+require 'logger'
+require 'Qt4'
+require_relative '../lib/cipher'
+require_relative '../qt/main.ui'
+
+class Main < Qt::MainWindow
+	def initialize
+		super()
+		@log = Logger.new(STDERR)
+		@u = Ui_MainWindow.new
+		@u.setupUi(self)
+
+        #directory = Qt::FileDialog.getExistingDirectory(self, tr("Find Files"), Qt::Dir.currentPath())
+
+		@cipher_selector = CipherSelector.new
+
+		@cipher_selector.ciphers.sort.each do |cipher|
+			@u.cipher_selector.addItem(cipher)
+		end
+	end
+
+	slots 'cipher_selected(QString)'
+
+	def cipher_selected(cipher)
+		@log.debug "Cipher selected: #{cipher}"
+	end
+end
+
+a = Qt::Application.new(ARGV)
+Main.new.show
+a.exec
+

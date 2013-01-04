@@ -3,6 +3,7 @@ source "http://rubygems.org"
 gem "cli", "~> 1.3.1"
 gem "haddock", "~> 0.2"
 gem "sdl4r", "~> 0.9"
+gem "qtbindings", "~> 4.8.3"
 
 # Add dependencies to develop your gem here.
 # Include everything needed to run rake, tests, features, etc.

@@ -21,6 +21,7 @@ GEM
       rake
       rdoc
     json (1.7.5)
+    qtbindings (4.8.3.0)
     rake (10.0.3)
     rdoc (3.12)
       json (~> 1.4)
@@ -45,6 +46,7 @@ DEPENDENCIES
   daemon (~> 1.1)
   haddock (~> 0.2)
   jeweler (~> 1.8.3)
+  qtbindings (~> 4.8.3)
   rdoc (~> 3.12)
   rspec (~> 2.8.0)
   sdl4r (~> 0.9)
