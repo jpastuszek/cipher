@@ -1,7 +1,7 @@
 =begin
 ** Form generated from reading ui file 'main.ui'
 **
-** Created: pt. sty 4 22:33:38 2013
+** Created: pt. sty 4 23:34:02 2013
 **      by: Qt User Interface Compiler version 4.8.4
 **
 ** WARNING! All changes made in this file will be lost when recompiling ui file!
@@ -52,7 +52,7 @@ class Ui_MainWindow
     if mainWindow.objectName.nil?
         mainWindow.objectName = "mainWindow"
     end
-    mainWindow.resize(808, 312)
+    mainWindow.resize(721, 293)
     @centralwidget = Qt::Widget.new(mainWindow)
     @centralwidget.objectName = "centralwidget"
     @horizontalLayout_9 = Qt::HBoxLayout.new(@centralwidget)
@@ -118,6 +118,7 @@ class Ui_MainWindow
 
     @sub_block_size_selector = Qt::SpinBox.new(@groupBox)
     @sub_block_size_selector.objectName = "sub_block_size_selector"
+    @sub_block_size_selector.enabled = true
     @sub_block_size_selector.maximum = 128
     @sub_block_size_selector.singleStep = 8
     @sub_block_size_selector.value = 64
@@ -226,6 +227,9 @@ class Ui_MainWindow
     retranslateUi(mainWindow)
     Qt::Object.connect(@cipher_selector, SIGNAL('currentIndexChanged(QString)'), mainWindow, SLOT('cipher_selected(QString)'))
     Qt::Object.connect(@mode_selector, SIGNAL('currentIndexChanged(QString)'), mainWindow, SLOT('mode_selected(QString)'))
+    Qt::Object.connect(@sub_block_size_selector, SIGNAL('valueChanged(int)'), mainWindow, SLOT('sub_block_size_selected(int)'))
+    Qt::Object.connect(@key_size_selector, SIGNAL('valueChanged(int)'), mainWindow, SLOT('key_size_selected(int)'))
+    Qt::Object.connect(@encrypt_button, SIGNAL('clicked()'), mainWindow, SLOT('encrypt()'))
 
     @tabWidget.setCurrentIndex(0)
 

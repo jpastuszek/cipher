@@ -132,6 +132,24 @@ class Main < Qt::MainWindow
 			@u.sub_block_size_selector.setEnabled true
 		end
 	end
+
+	slots 'sub_block_size_selected(int)'
+	def sub_block_size_selected(sub_block_size)
+		$log.debug "Sub block size selected: #{sub_block_size}"
+		@key_size_selector = @mode_selector.mode(@key_size_selector.mode, sub_block_size == @key_size_selector.block_size ? :full_block : sub_block_size)
+	end
+
+	slots 'key_size_selected(int)'
+	def key_size_selected(key_size)
+		$log.debug "Key size selected: #{key_size}"
+	end
+
+
+	slots 'encrypt()'
+	def encrypt
+		cipher_info = @key_size_selector.key_size(@u.key_size_selector.value)
+		$log.debug "Cipher info: cipher: #{cipher_info.cipher} mode: #{cipher_info.mode} sub block size: #{cipher_info.sub_block_size} key size: #{cipher_info.key_size} OpenSSL cipher name: #{cipher_info.openssl_cipher_name}"
+	end
 end
 
 a = Qt::Application.new(ARGV)
