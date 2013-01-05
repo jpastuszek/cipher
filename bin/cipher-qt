@@ -203,13 +203,17 @@ class Main < Qt::MainWindow
 		decryption_password_dialog = DecryptionPassword.new
 		return if decryption_password_dialog.exec == Qt::Dialog::Rejected
 
-		input_file.open 'r' do |input|
-			output_file.open 'w' do |output|
-				IODecrypter.new(input, output, decryption_password_dialog.password)
+		begin
+			input_file.open 'r' do |input|
+				output_file.open 'w' do |output|
+					IODecrypter.new(input, output, decryption_password_dialog.password)
+				end
 			end
-		end
 
-		Qt::MessageBox::about self, 'Success', "Encrypted data saved to file #{output_file}"
+			Qt::MessageBox::about self, 'Success', "Encrypted data saved to file #{output_file}"
+		rescue OpenSSL::Cipher::CipherError
+			Qt::MessageBox::critical self, 'Failure', "Decryption failed! Check our password."
+		end
 	end
 end
 
