@@ -1,7 +1,7 @@
 =begin
 ** Form generated from reading ui file 'main.ui'
 **
-** Created: sob. sty 5 02:28:11 2013
+** Created: sob. sty 5 02:47:30 2013
 **      by: Qt User Interface Compiler version 4.8.4
 **
 ** WARNING! All changes made in this file will be lost when recompiling ui file!
@@ -223,6 +223,16 @@ class Ui_MainWindow
     @statusbar = Qt::StatusBar.new(mainWindow)
     @statusbar.objectName = "statusbar"
     mainWindow.statusBar = @statusbar
+    Qt::Widget.setTabOrder(@encryption_input_file_button, @cipher_selector)
+    Qt::Widget.setTabOrder(@cipher_selector, @mode_selector)
+    Qt::Widget.setTabOrder(@mode_selector, @sub_block_size_selector)
+    Qt::Widget.setTabOrder(@sub_block_size_selector, @key_size_selector)
+    Qt::Widget.setTabOrder(@key_size_selector, @encrypt_button)
+    Qt::Widget.setTabOrder(@encrypt_button, @decryption_input_file_button)
+    Qt::Widget.setTabOrder(@decryption_input_file_button, @decrypt_button)
+    Qt::Widget.setTabOrder(@decrypt_button, @tabWidget)
+    Qt::Widget.setTabOrder(@tabWidget, @decryption_input_file_path)
+    Qt::Widget.setTabOrder(@decryption_input_file_path, @encryption_input_file_path)
 
     retranslateUi(mainWindow)
     Qt::Object.connect(@cipher_selector, SIGNAL('currentIndexChanged(QString)'), mainWindow, SLOT('cipher_selected(QString)'))

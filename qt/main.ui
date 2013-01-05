@@ -250,6 +250,22 @@
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
  </widget>
+ <tabstops>
+  <tabstop>encryption_input_file_button</tabstop>
+  <tabstop>cipher_selector</tabstop>
+  <tabstop>mode_selector</tabstop>
+  <tabstop>sub_block_size_selector</tabstop>
+  <tabstop>key_size_selector</tabstop>
+  <tabstop>encrypt_button</tabstop>
+  <tabstop>decryption_input_file_button</tabstop>
+  <tabstop>decrypt_button</tabstop>
+  <tabstop>tabWidget</tabstop>
+  <tabstop>lineEdit_3</tabstop>
+  <tabstop>pushButton_3</tabstop>
+  <tabstop>decryption_input_file_path</tabstop>
+  <tabstop>encrypt_button_3</tabstop>
+  <tabstop>encryption_input_file_path</tabstop>
+ </tabstops>
  <resources/>
  <connections>
   <connection>

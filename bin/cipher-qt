@@ -208,20 +208,25 @@ class Main < Qt::MainWindow
 		encryption_password_dialog = EncryptionPassword.new
 		return if encryption_password_dialog.exec == Qt::Dialog::Rejected
 
-		input_file.open 'r' do |input|
-			input.extend FileReadStats
-			input.on_bytes_read_progress(1024 * 8) do |progress|
-				@u.encryption_progress_bar.setValue (progress * 100).to_i
-				Qt::CoreApplication::processEvents
+		begin
+			@u.encrypt_button.setEnabled false
+			input_file.open 'r' do |input|
+				input.extend FileReadStats
+				input.on_bytes_read_progress(1024 * 8) do |progress|
+					@u.encryption_progress_bar.setValue (progress * 100).to_i
+					Qt::CoreApplication::processEvents
+				end
+
+				output_file.open 'w' do |output|
+					IOEncrypter.new(input, output, cipher_info, encryption_password_dialog.password)
+				end
 			end
 
-			output_file.open 'w' do |output|
-				IOEncrypter.new(input, output, cipher_info, encryption_password_dialog.password)
-			end
+			Qt::MessageBox::about self, 'Success', "Encrypted data saved to file #{output_file}"
+		ensure
+			@u.encrypt_button.setEnabled true
+			@u.encryption_progress_bar.setValue 0
 		end
-
-		Qt::MessageBox::about self, 'Success', "Encrypted data saved to file #{output_file}"
-		@u.encryption_progress_bar.setValue 0
 	end
 
 	## Decryption
@@ -247,6 +252,7 @@ class Main < Qt::MainWindow
 		return if decryption_password_dialog.exec == Qt::Dialog::Rejected
 
 		begin
+			@u.decrypt_button.setEnabled false
 			input_file.open 'r' do |input|
 				input.extend FileReadStats
 				input.on_bytes_read_progress(1024 * 8) do |progress|
@@ -262,6 +268,8 @@ class Main < Qt::MainWindow
 			Qt::MessageBox::about self, 'Success', "Encrypted data saved to file #{output_file}"
 		rescue OpenSSL::Cipher::CipherError
 			Qt::MessageBox::critical self, 'Failure', "Decryption failed! Check our password."
+		ensure
+			@u.decrypt_button.setEnabled true
 		end
 		@u.decryption_progress_bar.setValue 0
 	end

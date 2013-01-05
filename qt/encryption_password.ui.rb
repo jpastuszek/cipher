@@ -1,7 +1,7 @@
 =begin
 ** Form generated from reading ui file 'encryption_password.ui'
 **
-** Created: sob. sty 5 01:49:19 2013
+** Created: sob. sty 5 02:47:39 2013
 **      by: Qt User Interface Compiler version 4.8.4
 **
 ** WARNING! All changes made in this file will be lost when recompiling ui file!
@@ -83,6 +83,10 @@ class Ui_EncryptionPassword
 
     @verticalLayout.addWidget(@buttonBox)
 
+    Qt::Widget.setTabOrder(@password, @password_retype)
+    Qt::Widget.setTabOrder(@password_retype, @buttonBox)
+    Qt::Widget.setTabOrder(@buttonBox, @show_password_checkbox)
+    Qt::Widget.setTabOrder(@show_password_checkbox, @generate_password_button)
 
     retranslateUi(encryptionPassword)
     Qt::Object.connect(@buttonBox, SIGNAL('accepted()'), encryptionPassword, SLOT('accept()'))
