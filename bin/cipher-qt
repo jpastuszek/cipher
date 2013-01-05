@@ -7,6 +7,7 @@ require 'Qt4'
 require_relative '../lib/cipher'
 require_relative '../qt/main.ui'
 require_relative '../qt/encryption_password.ui'
+require_relative '../qt/decryption_password.ui'
 
 $log = Logger.new(STDERR)
 
@@ -58,6 +59,8 @@ class Main < Qt::MainWindow
 			@u.cipher_selector.addItem(cipher)
 		end
 	end
+
+	## Encryption
 
 	slots 'cipher_selected(QString)'
 	def cipher_selected(cipher)
@@ -159,7 +162,7 @@ class Main < Qt::MainWindow
 
 		input_file = Pathname.new(@u.encryption_input_file_path.text)
 		unless input_file.readable?
-			Qt::MessageBox::warning self, 'Input File', 'Please select encryption input file', Qt::MessageBox::Ok
+			Qt::MessageBox::warning self, 'Input File', 'Please select file to encrypt', Qt::MessageBox::Ok
 			return
 		end
 
@@ -177,6 +180,37 @@ class Main < Qt::MainWindow
 
 		Qt::MessageBox::about self, 'Success', "Encrypted data saved to file #{output_file}"
 	end
+
+	## Decryption
+	
+	slots 'select_decryption_input_file()'
+	def select_decryption_input_file
+		input_file = Qt::FileDialog.getOpenFileName(self, tr("File to decrypt"), "", "Any file (*)") or return
+		@u.decryption_input_file_path.setText input_file
+	end
+
+	slots 'decrypt()'
+	def decrypt
+		input_file = Pathname.new(@u.decryption_input_file_path.text)
+		unless input_file.readable?
+			Qt::MessageBox::warning self, 'Input File', 'Please select file to decrypt', Qt::MessageBox::Ok
+			return
+		end
+
+		output_file = Qt::FileDialog.getSaveFileName(self, tr("Decrypted file name"), "") or return
+		output_file = Pathname.new(output_file)
+
+		decryption_password_dialog = DecryptionPassword.new
+		return if decryption_password_dialog.exec == Qt::Dialog::Rejected
+
+		input_file.open 'r' do |input|
+			output_file.open 'w' do |output|
+				IODecrypter.new(input, output, decryption_password_dialog.password)
+			end
+		end
+
+		Qt::MessageBox::about self, 'Success', "Encrypted data saved to file #{output_file}"
+	end
 end
 
 class EncryptionPassword < Qt::Dialog
@@ -185,8 +219,6 @@ class EncryptionPassword < Qt::Dialog
 
 		@u = Ui_EncryptionPassword.new
 		@u.setupUi(self)
-
-		show_password Qt::Unchecked
 	end
 
 	def accept
@@ -223,6 +255,19 @@ class EncryptionPassword < Qt::Dialog
 			@u.password.setEchoMode Qt::LineEdit::Normal
 			@u.password_retype.setEchoMode Qt::LineEdit::Normal
 		end
+	end
+
+	def password
+		@u.password.text
+	end
+end
+
+class DecryptionPassword < Qt::Dialog
+	def initialize
+		super()
+
+		@u = Ui_DecryptionPassword.new
+		@u.setupUi(self)
 	end
 
 	def password

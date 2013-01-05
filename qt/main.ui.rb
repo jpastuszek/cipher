@@ -1,7 +1,7 @@
 =begin
 ** Form generated from reading ui file 'main.ui'
 **
-** Created: sob. sty 5 00:38:38 2013
+** Created: sob. sty 5 01:36:17 2013
 **      by: Qt User Interface Compiler version 4.8.4
 **
 ** WARNING! All changes made in this file will be lost when recompiling ui file!
@@ -45,7 +45,7 @@ class Ui_MainWindow
     attr_reader :verticalSpacer_2
     attr_reader :horizontalLayout_6
     attr_reader :decryption_progress_bar
-    attr_reader :decryption_button
+    attr_reader :decrypt_button
     attr_reader :statusbar
 
     def setupUi(mainWindow)
@@ -207,10 +207,10 @@ class Ui_MainWindow
 
     @horizontalLayout_6.addWidget(@decryption_progress_bar)
 
-    @decryption_button = Qt::PushButton.new(@decryptionTab)
-    @decryption_button.objectName = "decryption_button"
+    @decrypt_button = Qt::PushButton.new(@decryptionTab)
+    @decrypt_button.objectName = "decrypt_button"
 
-    @horizontalLayout_6.addWidget(@decryption_button)
+    @horizontalLayout_6.addWidget(@decrypt_button)
 
 
     @verticalLayout.addLayout(@horizontalLayout_6)
@@ -231,6 +231,8 @@ class Ui_MainWindow
     Qt::Object.connect(@key_size_selector, SIGNAL('valueChanged(int)'), mainWindow, SLOT('key_size_selected(int)'))
     Qt::Object.connect(@encrypt_button, SIGNAL('clicked()'), mainWindow, SLOT('encrypt()'))
     Qt::Object.connect(@encryption_input_file_button, SIGNAL('clicked()'), mainWindow, SLOT('select_encryption_input_file()'))
+    Qt::Object.connect(@decryption_input_file_button, SIGNAL('clicked()'), mainWindow, SLOT('select_decryption_input_file()'))
+    Qt::Object.connect(@decrypt_button, SIGNAL('clicked()'), mainWindow, SLOT('decrypt()'))
 
     @tabWidget.setCurrentIndex(0)
 
@@ -255,7 +257,7 @@ class Ui_MainWindow
     @tabWidget.setTabText(@tabWidget.indexOf(@encryptionTab), Qt::Application.translate("MainWindow", "Encryption", nil, Qt::Application::UnicodeUTF8))
     @groupBox_3.title = Qt::Application.translate("MainWindow", "Input file", nil, Qt::Application::UnicodeUTF8)
     @decryption_input_file_button.text = Qt::Application.translate("MainWindow", "Input file...", nil, Qt::Application::UnicodeUTF8)
-    @decryption_button.text = Qt::Application.translate("MainWindow", "Decrypt...", nil, Qt::Application::UnicodeUTF8)
+    @decrypt_button.text = Qt::Application.translate("MainWindow", "Decrypt...", nil, Qt::Application::UnicodeUTF8)
     @tabWidget.setTabText(@tabWidget.indexOf(@decryptionTab), Qt::Application.translate("MainWindow", "Decryption", nil, Qt::Application::UnicodeUTF8))
     end # retranslateUi
 

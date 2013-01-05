@@ -1,7 +1,7 @@
 =begin
 ** Form generated from reading ui file 'encryption_password.ui'
 **
-** Created: sob. sty 5 01:03:26 2013
+** Created: sob. sty 5 01:49:19 2013
 **      by: Qt User Interface Compiler version 4.8.4
 **
 ** WARNING! All changes made in this file will be lost when recompiling ui file!
@@ -44,11 +44,13 @@ class Ui_EncryptionPassword
 
     @password_retype = Qt::LineEdit.new(encryptionPassword)
     @password_retype.objectName = "password_retype"
+    @password_retype.echoMode = Qt::LineEdit::Password
 
     @gridLayout.addWidget(@password_retype, 1, 1, 1, 1)
 
     @password = Qt::LineEdit.new(encryptionPassword)
     @password.objectName = "password"
+    @password.echoMode = Qt::LineEdit::Password
 
     @gridLayout.addWidget(@password, 0, 1, 1, 1)
 

@@ -234,7 +234,7 @@
            </widget>
           </item>
           <item>
-           <widget class="QPushButton" name="decryption_button">
+           <widget class="QPushButton" name="decrypt_button">
             <property name="text">
              <string>Decrypt...</string>
             </property>
@@ -348,6 +348,38 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>decryption_input_file_button</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>select_decryption_input_file()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>620</x>
+     <y>89</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>360</x>
+     <y>146</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>decrypt_button</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>decrypt()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>633</x>
+     <y>232</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>360</x>
+     <y>146</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>cipher_selected(QString)</slot>
@@ -356,5 +388,7 @@
   <slot>key_size_selected(int)</slot>
   <slot>encrypt()</slot>
   <slot>select_encryption_input_file()</slot>
+  <slot>select_decryption_input_file()</slot>
+  <slot>decrypt()</slot>
  </slots>
 </ui>
