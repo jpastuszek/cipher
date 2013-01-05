@@ -1,0 +1,1765 @@
+#LyX 2.0 created this file. For more info see http://www.lyx.org/
+\lyxformat 413
+\begin_document
+\begin_header
+\textclass csthesis
+\begin_preamble
+\renewcommand{\maketitle}{%
+  \begin{titlepage}
+\begin{spacing}{2.0}
+  \secfont
+  \setlength{\parindent}{0pt}
+  \begin{center}
+\textsc{\LARGE olsztyńska wyższa szkoła informatyki i zarządzania}\\
+{\Large im. Prof. Tadeusza Kotarbińskiego w Olsztynie}\\
+\textsc{\huge wydział informatyki i nauk technicznych}\\
+{\Large Kierunek: Informatyka}\\[2.0cm]
+\includegraphics[width=0.15\textwidth]{./logo.png}\\[2.5cm]
+{\LARGE\@author}\\[3.0cm]
+{\huge\@title}\\[2.0cm]
+  \end{center}
+
+  \vfill
+
+\end{spacing}
+\begin{center}
+  {\large Olsztyn \@date}
+\end{center}
+  \end{titlepage}
+  \clearpage
+}
+
+\pagenumbering{arabic}
+\end_preamble
+\use_default_options true
+\begin_removed_modules
+dcsthm
+\end_removed_modules
+\begin_modules
+dcs
+\end_modules
+\maintain_unincluded_children false
+\language polish
+\language_package default
+\inputencoding utf8
+\fontencoding global
+\font_roman default
+\font_sans default
+\font_typewriter default
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100
+\font_tt_scale 100
+
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize default
+\spacing single
+\use_hyperref false
+\papersize default
+\use_geometry true
+\use_amsmath 1
+\use_esint 1
+\use_mhchem 1
+\use_mathdots 1
+\cite_engine basic
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\use_refstyle 1
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\leftmargin 4cm
+\topmargin 2cm
+\rightmargin 2cm
+\bottommargin 2cm
+\headheight 1cm
+\headsep 1cm
+\footskip 1cm
+\secnumdepth 3
+\tocdepth 3
+\paragraph_separation indent
+\paragraph_indentation default
+\quotes_language english
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Title
+Bezpieczeństwo Systemów Komputerowych - Szyfrowanie plików wraz z przekazaniem
+ klucza sesyjnego
+\end_layout
+
+\begin_layout Author
+Jakub Pastuszek
+\end_layout
+
+\begin_layout Date
+2013
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset toc
+LatexCommand tableofcontents
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Part
+Cel
+\end_layout
+
+\begin_layout Standard
+Praca ma calu opracowanie aplikacji z graficznym interfejsem użytkownika
+ umożliwiającej szyfrowanie i deszyfrowanie plików.
+ 
+\end_layout
+
+\begin_layout Standard
+Aplikacja powinna wykorzystać wybrany algorytm szyfrowania pracujący w trybach
+ CBC, ECB, OFB i CFB.
+ W trybach OFB i CFB powinna umożliwić wybór długości podbloku.
+ Dodatkowo powinna umożliwić wybór długości klucza.
+\end_layout
+
+\begin_layout Standard
+Plik wyjściowy procesu szyfrowania powinien zawierać informacje umożliwiające
+ dobór parametrów potrzebnych do jego rozszyfrowania.
+\end_layout
+
+\begin_layout Standard
+Aplikacja powinna wykorzystać jednorazowy losowy klucz sesji do szyfrowania
+ danych.
+ Klucz ten powinien być zapisany w pliku wynikowym w postaci zaszyfrowanej
+ przy pomocy podanego przez użytkownika hasła.
+\end_layout
+
+\begin_layout Standard
+Do zaimplementowania aplikacji wykorzystałem język programowania Ruby
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+http://www.ruby-lang.org
+\end_layout
+
+\end_inset
+
+ i jako wymagany algorytm szyfrowania wybrałem algorytm AES.
+\end_layout
+
+\begin_layout Part
+Struktura pliku wyjściowego procesu szyfrowania
+\end_layout
+
+\begin_layout Chapter
+Nagówek
+\end_layout
+
+\begin_layout Standard
+Nagłówek jest zapisany w postaci tekstowej i jest oddzielony od szyfrogramu
+ dwoma znakami nowej linii (
+\emph on
+
+\backslash
+n
+\backslash
+n
+\emph default
+).
+ Zawiera no następujące informacje:
+\end_layout
+
+\begin_layout Itemize
+nazwa algorytmu szyfrowania
+\end_layout
+
+\begin_layout Itemize
+tryb pracy algorytmu szyfrowania
+\end_layout
+
+\begin_layout Itemize
+długość klucza w bitach
+\end_layout
+
+\begin_layout Itemize
+długość podbloku w bitach (jeśli różny od długości bloku algorytmu szyfrującego)
+\end_layout
+
+\begin_layout Itemize
+wektor inicjujący zakodowany szesnastkowo (jeśli potrzebny dla danego trybu
+ pracy)
+\end_layout
+
+\begin_layout Itemize
+zaszyfrowany hasłem, tym samy algorytmem ale w trybie ECB oraz z wykorzystaniem
+ paddingu klucz z sesji zakodowany szesnastkowo
+\end_layout
+
+\begin_layout Subsection*
+Przykładowy nagłówek
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+cipher "BF"
+\end_layout
+
+\begin_layout Plain Layout
+
+mode "CFB"
+\end_layout
+
+\begin_layout Plain Layout
+
+key_size 256
+\end_layout
+
+\begin_layout Plain Layout
+
+sub_block_size 8
+\end_layout
+
+\begin_layout Plain Layout
+
+initialization_vector "3b5caafe7864a00b"
+\end_layout
+
+\begin_layout Plain Layout
+
+session_key "054b5d98c8a1d621a082cd45935d56a6ea913241d8d54fc741ea9c16fc627d3cf2f
+877ff306f9143" 
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection*
+Format nagłówka
+\end_layout
+
+\begin_layout Standard
+Do zapisu i odczytu nagłówka wykorzystana jest biblioteka SDL
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+http://sdl4r.rubyforge.org
+\end_layout
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Chapter
+Szyfrogram
+\end_layout
+
+\begin_layout Standard
+Szyfrogram jest zapisany binarnie bez żadnych dodatkowych modyfikacji zaraz
+ po dwóch znakach nowej linii sygnalizujących koniec nagłówka.
+\end_layout
+
+\begin_layout Subsection*
+Długość danych wejściowych
+\end_layout
+
+\begin_layout Standard
+Przy wykorzystaniu trybu wymagającego dodania tak zwanego paddingu (CBC,
+ ECB) stosowany jest on w formacie zdefiniowanym przez standard PKCS#5
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+http://en.wikipedia.org/wiki/Padding_(cryptography)
+\end_layout
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+Aplikacja pracując w trybie nie wymagającym paddingu (CFB, OFB) zapisuje
+ ostatni blok w odpowiednio skróconej formie.
+\end_layout
+
+\begin_layout Part
+Interfejs użytkownika
+\end_layout
+
+\begin_layout Chapter
+Wykorzystana technologia
+\end_layout
+
+\begin_layout Standard
+Do budowy interfejsu użytkownika została zastosowana biblioteka Qt
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+http://qt-project.org
+\end_layout
+
+\end_inset
+
+.
+ Jest to wieloplatformowa technologia umożliwiająca budowę przenośnych aplikacji
+ z interfejsem graficznym.
+ Dzięki zastosowaniu biblioteki qtbindings
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+https://github.com/ryanmelt/qtbindings
+\end_layout
+
+\end_inset
+
+ możliwe jest skorzystanie z niej z poziomu języka programowania Ruby.
+\end_layout
+
+\begin_layout Chapter
+Funkcjonalność interfejsu
+\end_layout
+
+\begin_layout Section*
+Szyfrowanie
+\end_layout
+
+\begin_layout Standard
+Dzięki zastosowaniu biblioteki szyfrowania OpenSSL
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+http://www.openssl.org
+\end_layout
+
+\end_inset
+
+, która jest natywnie dostępna w Ruby, interfejs umożliwia wybór jednego
+ z wielu dostępnych algorytmów szyfrowania.
+ 
+\end_layout
+
+\begin_layout Standard
+Algorytmy te mogą pracować w różnych dostępnych trybach.
+ Jednak by spełnić wymagania dla algorytmów umożliwiających tryb pracy ECB
+ zaimplementowana została obsługa trybów OFB i CFB wspierająca wybór dowolnej
+ długości podbloku.
+ OpenSSL natywnie wspiera tryb OFB z podblokiem o długości 1 i 8 bitów dla
+ wybranych algorytmów i będzie on wykorzystany zamiast dodatkowej implementacji
+ gdy jest to możliwie.
+\end_layout
+
+\begin_layout Standard
+Interfejs także umożliwia wybór długości klucza.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+placement h
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\begin_inset Graphics
+	filename encryption.tiff
+	scale 50
+	groupId screenshot
+
+\end_inset
+
+
+\begin_inset Caption
+
+\begin_layout Plain Layout
+Główne okno aplikacji - szyfrowanie
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Do wykonania operacji szyfrowania konieczny jest wybór pliku wejściowego.
+\end_layout
+
+\begin_layout Standard
+Po naciśnięciu guzika 
+\emph on
+Encrypt...
+
+\emph default
+ interfejs zapyta o lokację i nazwę pliku wyjściowego oraz o hasło szyfrowania
+ klucza sesji.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+placement h
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\begin_inset Graphics
+	filename encryption password.tiff
+	scale 50
+	groupId screenshot
+
+\end_inset
+
+
+\begin_inset Caption
+
+\begin_layout Plain Layout
+Okno wyboru hasła szyfrowania
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Okno wybory hasła szyfrowania oferuje opcję generowania losowego hasła.
+ Dodatkowo jest możliwe odsłonięcia hasła.
+\end_layout
+
+\begin_layout Standard
+Po wyborze hasła rozpoczęty jest proces szyfrowania którego postęp jest
+ przedstawiony za pomocą paska postępu.
+\end_layout
+
+\begin_layout Section*
+Deszyfrowanie
+\end_layout
+
+\begin_layout Standard
+Okno deszyfrowania umożliwia wybór pliku zaszyfrowanego.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+placement h
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+\begin_inset Graphics
+	filename decryption.tiff
+	scale 50
+	groupId screenshot
+
+\end_inset
+
+
+\begin_inset Caption
+
+\begin_layout Plain Layout
+Główne okno aplikacji - deszyfrowanie
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Po naciśnięciu guzika 
+\emph on
+Decrypt...
+
+\emph default
+ aplikacja zapyta o podanie hasła które będzie wykorzystane w procesie deszyfrac
+ji klucza sesyjnego.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Float figure
+placement h
+wide false
+sideways false
+status open
+
+\begin_layout Plain Layout
+\begin_inset Graphics
+	filename decryption password.tiff
+	scale 50
+	groupId screenshot
+
+\end_inset
+
+
+\begin_inset Caption
+
+\begin_layout Plain Layout
+Okno zapytania o hasło do deszyfracji
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Po wprowadzeniu hasła aplikacja przystąpi do rozszyfrowywania danych.
+ Postęp tej operacji będzie odzwierciedlony za pomocą paska postępu.
+\end_layout
+
+\begin_layout Part
+Wyniki testów
+\end_layout
+
+\begin_layout Chapter
+Technologie wykorzystanie do testowania aplikacji
+\end_layout
+
+\begin_layout Standard
+W procesie tworzenia tej aplikacji zostały zastosowane dwie technologie
+ automatycznego testowania.
+\end_layout
+
+\begin_layout Standard
+Klasy wchodzące w skład aplikacji są testowane za pomocą testów jednostkowych
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+http://en.wikipedia.org/wiki/Unit_testing
+\end_layout
+
+\end_inset
+
+ wykorzystując bibliotekę RSpec2
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+http://rspec.info
+\end_layout
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+Podstawowa funkcjonalność aplikacji jest testowana w trybie linii komend
+ przy zastosowaniu technologi Cucumber
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+http://cukes.info
+\end_layout
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Chapter
+Wyniki testów
+\end_layout
+
+\begin_layout Section*
+Wyniki testów jednostkowych
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+BlockCrypter::BlockSlicer
+\end_layout
+
+\begin_layout Plain Layout
+  should slice up input data into given size chunks
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+CipherSelector
+\end_layout
+
+\begin_layout Plain Layout
+  should provide list of available ciphers
+\end_layout
+
+\begin_layout Plain Layout
+  should raise error if selected cipher does not exist
+\end_layout
+
+\begin_layout Plain Layout
+  should provide ModeSelector for given cipher
+\end_layout
+
+\begin_layout Plain Layout
+  should provide flat list of all ciphers, modes and key lengths supported
+\end_layout
+
+\begin_layout Plain Layout
+  should privide block size
+\end_layout
+
+\begin_layout Plain Layout
+  ModeSelector
+\end_layout
+
+\begin_layout Plain Layout
+    should provide name of the cipher
+\end_layout
+
+\begin_layout Plain Layout
+    should provide list of available modes
+\end_layout
+
+\begin_layout Plain Layout
+    should raise error if selected mode does not exist
+\end_layout
+
+\begin_layout Plain Layout
+    should provide KeyLengthSelector for given mode
+\end_layout
+
+\begin_layout Plain Layout
+    should support selecting given mode
+\end_layout
+
+\begin_layout Plain Layout
+    should support selecting preffered mode
+\end_layout
+
+\begin_layout Plain Layout
+    #preferred_mode should select none mode when not available
+\end_layout
+
+\begin_layout Plain Layout
+    sub block selection
+\end_layout
+
+\begin_layout Plain Layout
+      should allow selecting sub block size from 8 to cipher block size
+ in 8 bit increments
+\end_layout
+
+\begin_layout Plain Layout
+      should raise error if sub block size is not supported
+\end_layout
+
+\begin_layout Plain Layout
+      should raise error is sub block cannot be used with given mode
+\end_layout
+
+\begin_layout Plain Layout
+  KeyLengthSelector
+\end_layout
+
+\begin_layout Plain Layout
+    should provide name of the cipher
+\end_layout
+
+\begin_layout Plain Layout
+    should provide name of the mode
+\end_layout
+
+\begin_layout Plain Layout
+    should provide list of available key lengths
+\end_layout
+
+\begin_layout Plain Layout
+    should raise error if selected key lentght does not exist
+\end_layout
+
+\begin_layout Plain Layout
+    should provide CipherInfo for given key length
+\end_layout
+
+\begin_layout Plain Layout
+    should support selecting given key length
+\end_layout
+
+\begin_layout Plain Layout
+    should support selecting custom key length with supported cipher
+\end_layout
+
+\begin_layout Plain Layout
+    should preferr selecting predefined key length with supported cipher
+ if requested matches
+\end_layout
+
+\begin_layout Plain Layout
+    should support selecting longest available key length
+\end_layout
+
+\begin_layout Plain Layout
+    #longest_key should select longest predefined key length when custom
+ key length is supported
+\end_layout
+
+\begin_layout Plain Layout
+    #longest_key should select 256 key length for ciphers supporting only
+ any key length
+\end_layout
+
+\begin_layout Plain Layout
+    #longest_key should select given key length for ciphers supporting only
+ any key length
+\end_layout
+
+\begin_layout Plain Layout
+    should preferr selecting predefined mode for given sub block if available
+\end_layout
+
+\begin_layout Plain Layout
+    should use ECB preset for sub block preset is not available
+\end_layout
+
+\begin_layout Plain Layout
+    should allow using custom sub block processor over predefined preset
+ when preffered
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+Encrypter
+\end_layout
+
+\begin_layout Plain Layout
+  should encrypt data stream with given cipher specs and key
+\end_layout
+
+\begin_layout Plain Layout
+  should provide initialization vector used
+\end_layout
+
+\begin_layout Plain Layout
+  should provide random initialization vector if not specified
+\end_layout
+
+\begin_layout Plain Layout
+  should provide nil initialization vector if not needed
+\end_layout
+
+\begin_layout Plain Layout
+  should work with custom key length
+\end_layout
+
+\begin_layout Plain Layout
+  should encrypt with padding
+\end_layout
+
+\begin_layout Plain Layout
+  should allow disabling of padding
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+Decrypter
+\end_layout
+
+\begin_layout Plain Layout
+  should decrypt data stream
+\end_layout
+
+\begin_layout Plain Layout
+  should work with custom key length
+\end_layout
+
+\begin_layout Plain Layout
+  should decrypt message without padding when padding is disabled
+\end_layout
+
+\begin_layout Plain Layout
+  custom sub block mode
+\end_layout
+
+\begin_layout Plain Layout
+    CFB
+\end_layout
+
+\begin_layout Plain Layout
+      encrypter
+\end_layout
+
+\begin_layout Plain Layout
+        should encrypt data stream with given cipher specs and key
+\end_layout
+
+\begin_layout Plain Layout
+      encrypter
+\end_layout
+
+\begin_layout Plain Layout
+        should decrypt data stream
+\end_layout
+
+\begin_layout Plain Layout
+    OFB
+\end_layout
+
+\begin_layout Plain Layout
+      encrypter
+\end_layout
+
+\begin_layout Plain Layout
+        should encrypt data stream with given cipher specs and key
+\end_layout
+
+\begin_layout Plain Layout
+      encrypter
+\end_layout
+
+\begin_layout Plain Layout
+        should decrypt data stream
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+Envelope::SDL
+\end_layout
+
+\begin_layout Plain Layout
+  should generate message
+\end_layout
+
+\begin_layout Plain Layout
+  should load streamed message
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+Filter
+\end_layout
+
+\begin_layout Plain Layout
+  should process input into output
+\end_layout
+
+\begin_layout Plain Layout
+  should allow passing multiple output values for one input
+\end_layout
+
+\begin_layout Plain Layout
+  should pass nil values
+\end_layout
+
+\begin_layout Plain Layout
+  may not produce value for input
+\end_layout
+
+\begin_layout Plain Layout
+  should output header before filtering
+\end_layout
+
+\begin_layout Plain Layout
+  should not output nil header value
+\end_layout
+
+\begin_layout Plain Layout
+  should output footer after filtering
+\end_layout
+
+\begin_layout Plain Layout
+  should not output nil footer value
+\end_layout
+
+\begin_layout Plain Layout
+  chaining
+\end_layout
+
+\begin_layout Plain Layout
+    should allow chaining of filters
+\end_layout
+
+\begin_layout Plain Layout
+    should call all header and footer handlers
+\end_layout
+
+\begin_layout Plain Layout
+  nesting
+\end_layout
+
+\begin_layout Plain Layout
+    should allow nesting many filters
+\end_layout
+
+\begin_layout Plain Layout
+    should call all header and footer handlers
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+IOEncrypter
+\end_layout
+
+\begin_layout Plain Layout
+  should encrypt input stream to output stream
+\end_layout
+
+\begin_layout Plain Layout
+  should use defferent session key for each run if not specified
+\end_layout
+
+\begin_layout Plain Layout
+  should use defferent initialization vector for each run if not specified
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+IODecrypter
+\end_layout
+
+\begin_layout Plain Layout
+  should decrypt input stream to output stream
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+SessionKey
+\end_layout
+
+\begin_layout Plain Layout
+  should be of given length in bits
+\end_layout
+
+\begin_layout Plain Layout
+  should be random
+\end_layout
+
+\begin_layout Plain Layout
+  can be encrypted
+\end_layout
+
+\begin_layout Plain Layout
+  can be encrypted (192)
+\end_layout
+
+\begin_layout Plain Layout
+  can be created from encrypted key
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+Finished in 0.37246 seconds
+\end_layout
+
+\begin_layout Plain Layout
+68 examples, 0 failures
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section*
+Wyniki testów funkcjonalnych
+\end_layout
+
+\begin_layout Standard
+\begin_inset listings
+inline false
+status open
+
+\begin_layout Plain Layout
+Feature: Encrypting and decrypting streams with CLI application
+\end_layout
+
+\begin_layout Plain Layout
+  In ordre to be useful in shell cipher provides CLI application
+\end_layout
+
+\begin_layout Plain Layout
+  This application can take input stream and produce encrypted or decrypted
+ stream
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+  Background: 
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+  #Given cipher will print it's output
+\end_layout
+
+\begin_layout Plain Layout
+  #Given decipher will print it's output
+\end_layout
+
+\begin_layout Plain Layout
+  Scenario: Usage display
+\end_layout
+
+\begin_layout Plain Layout
+    Given cipher argument -h
+\end_layout
+
+\begin_layout Plain Layout
+    Given cipher is running
+\end_layout
+
+\begin_layout Plain Layout
+    When I wait for cipher termination
+\end_layout
+
+\begin_layout Plain Layout
+    Then cipher output should include 'Usage:'
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+  Scenario: Encrypt to stdout with AES256-CBC by default
+\end_layout
+
+\begin_layout Plain Layout
+    Given cipher is running
+\end_layout
+
+\begin_layout Plain Layout
+    When I write test.txt to cipher input
+\end_layout
+
+\begin_layout Plain Layout
+    Then I wait for cipher termination
+\end_layout
+
+\begin_layout Plain Layout
+    And cipher output should include following entries:
+\end_layout
+
+\begin_layout Plain Layout
+      | cipher "AES"          |
+\end_layout
+
+\begin_layout Plain Layout
+      | mode "CBC"            |
+\end_layout
+
+\begin_layout Plain Layout
+      | key_size 256          |
+\end_layout
+
+\begin_layout Plain Layout
+      | session_key           |
+\end_layout
+
+\begin_layout Plain Layout
+      | initialization_vector |
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+Feature: Encrypting and decrypting streams with different encryption parameters
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+  Background: 
+\end_layout
+
+\begin_layout Plain Layout
+    Given cipher argument -p test
+\end_layout
+
+\begin_layout Plain Layout
+    Given decipher argument -p test
+\end_layout
+
+\begin_layout Plain Layout
+    Given content of test.txt file is used as cipher input
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+  @encryption @aes
+\end_layout
+
+\begin_layout Plain Layout
+  Scenario: Encryption with AES 128 ECB
+\end_layout
+
+\begin_layout Plain Layout
+    Given cipher argument -c AES -k 128 -m ECB
+\end_layout
+
+\begin_layout Plain Layout
+    When I run cipher with output sent through decipher
+\end_layout
+
+\begin_layout Plain Layout
+    Then decipher output should be the same as cipher input
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+  @encryption @aes
+\end_layout
+
+\begin_layout Plain Layout
+  Scenario: Encryption with AES 192 ECB
+\end_layout
+
+\begin_layout Plain Layout
+    Given cipher argument -c AES -k 192 -m ECB
+\end_layout
+
+\begin_layout Plain Layout
+    When I run cipher with output sent through decipher
+\end_layout
+
+\begin_layout Plain Layout
+    Then decipher output should be the same as cipher input
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+  @encryption @aes
+\end_layout
+
+\begin_layout Plain Layout
+  Scenario: Encryption with AES 256 ECB
+\end_layout
+
+\begin_layout Plain Layout
+    Given cipher argument -c AES -k 128 -m ECB
+\end_layout
+
+\begin_layout Plain Layout
+    When I run cipher with output sent through decipher
+\end_layout
+
+\begin_layout Plain Layout
+    Then decipher output should be the same as cipher input
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+  @encryption @aes
+\end_layout
+
+\begin_layout Plain Layout
+  Scenario: Encryption with AES 128 CFB
+\end_layout
+
+\begin_layout Plain Layout
+    Given cipher argument -c AES -k 128 -m CFB
+\end_layout
+
+\begin_layout Plain Layout
+    When I run cipher with output sent through decipher
+\end_layout
+
+\begin_layout Plain Layout
+    Then decipher output should be the same as cipher input
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+  @encryption @aes
+\end_layout
+
+\begin_layout Plain Layout
+  Scenario: Encryption with AES 128 OFB
+\end_layout
+
+\begin_layout Plain Layout
+    Given cipher argument -c AES -k 128 -m OFB
+\end_layout
+
+\begin_layout Plain Layout
+    When I run cipher with output sent through decipher
+\end_layout
+
+\begin_layout Plain Layout
+    Then decipher output should be the same as cipher input
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+  @encryption @aes @native-sub-block @cfb
+\end_layout
+
+\begin_layout Plain Layout
+  Scenario: Encryption with AES 128 CFB-1
+\end_layout
+
+\begin_layout Plain Layout
+    Given cipher argument -c AES -k 128 -m CFB-1
+\end_layout
+
+\begin_layout Plain Layout
+    When I run cipher with output sent through decipher
+\end_layout
+
+\begin_layout Plain Layout
+    Then decipher output should be the same as cipher input
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+  @encryption @aes @native-sub-block @cfb
+\end_layout
+
+\begin_layout Plain Layout
+  Scenario: Encryption with AES 128 CFB-8
+\end_layout
+
+\begin_layout Plain Layout
+    Given cipher argument -c AES -k 128 -m CFB-8
+\end_layout
+
+\begin_layout Plain Layout
+    When I run cipher with output sent through decipher
+\end_layout
+
+\begin_layout Plain Layout
+    Then decipher output should be the same as cipher input
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+  @encryption @aes @custom-to-native-sub-block @cfb
+\end_layout
+
+\begin_layout Plain Layout
+  Scenario: Encryption with AES 128 CFB-8 (custom encryption, native decryption)
+\end_layout
+
+\begin_layout Plain Layout
+    Given cipher argument -c AES -k 128 -m CFB-8 -B
+\end_layout
+
+\begin_layout Plain Layout
+    When I run cipher with output sent through decipher
+\end_layout
+
+\begin_layout Plain Layout
+    Then decipher output should be the same as cipher input
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+  @encryption @aes @custom-to-native-sub-block @cfb
+\end_layout
+
+\begin_layout Plain Layout
+  Scenario: Encryption with AES 128 CFB (custom encryption, native decryption)
+\end_layout
+
+\begin_layout Plain Layout
+    Given cipher argument -c AES -k 128 -m CFB -B
+\end_layout
+
+\begin_layout Plain Layout
+    When I run cipher with output sent through decipher
+\end_layout
+
+\begin_layout Plain Layout
+    Then decipher output should be the same as cipher input
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+  @encryption @aes @native-to-custom-sub-block @cfb
+\end_layout
+
+\begin_layout Plain Layout
+  Scenario: Encryption with AES 128 CFB-8 (native encryption, custom decryption)
+\end_layout
+
+\begin_layout Plain Layout
+    Given cipher argument -c AES -k 128 -m CFB-8
+\end_layout
+
+\begin_layout Plain Layout
+    Given decipher argument -B
+\end_layout
+
+\begin_layout Plain Layout
+    When I run cipher with output sent through decipher
+\end_layout
+
+\begin_layout Plain Layout
+    Then decipher output should be the same as cipher input
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+  @encryption @aes @native-to-custom-sub-block @cfb
+\end_layout
+
+\begin_layout Plain Layout
+  Scenario: Encryption with AES 128 CFB (native encryption, custom decryption)
+\end_layout
+
+\begin_layout Plain Layout
+    Given cipher argument -c AES -k 128 -m CFB
+\end_layout
+
+\begin_layout Plain Layout
+    Given decipher argument -B
+\end_layout
+
+\begin_layout Plain Layout
+    When I run cipher with output sent through decipher
+\end_layout
+
+\begin_layout Plain Layout
+    Then decipher output should be the same as cipher input
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+  @encryption @aes @custom-sub-block @cfb
+\end_layout
+
+\begin_layout Plain Layout
+  Scenario: Encryption with AES 128 CFB-16
+\end_layout
+
+\begin_layout Plain Layout
+    Given cipher argument -c AES -k 128 -m CFB-16
+\end_layout
+
+\begin_layout Plain Layout
+    When I run cipher with output sent through decipher
+\end_layout
+
+\begin_layout Plain Layout
+    Then decipher output should be the same as cipher input
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+  @encryption @aes @custom-sub-block @cfb
+\end_layout
+
+\begin_layout Plain Layout
+  Scenario: Encryption with AES 128 CFB-64
+\end_layout
+
+\begin_layout Plain Layout
+    Given cipher argument -c AES -k 128 -m CFB-64
+\end_layout
+
+\begin_layout Plain Layout
+    When I run cipher with output sent through decipher
+\end_layout
+
+\begin_layout Plain Layout
+    Then decipher output should be the same as cipher input
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+  @encryption @aes @custom-sub-block @cfb
+\end_layout
+
+\begin_layout Plain Layout
+  Scenario: Encryption with AES 128 CFB-80
+\end_layout
+
+\begin_layout Plain Layout
+    Given cipher argument -c AES -k 128 -m CFB-80
+\end_layout
+
+\begin_layout Plain Layout
+    When I run cipher with output sent through decipher
+\end_layout
+
+\begin_layout Plain Layout
+    Then decipher output should be the same as cipher input
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+  @encryption @aes @custom-to-native-sub-block @ofb
+\end_layout
+
+\begin_layout Plain Layout
+  Scenario: Encryption with AES 128 OFB (custom encryption, native decryption)
+\end_layout
+
+\begin_layout Plain Layout
+    Given cipher argument -c AES -k 128 -m OFB -B
+\end_layout
+
+\begin_layout Plain Layout
+    When I run cipher with output sent through decipher
+\end_layout
+
+\begin_layout Plain Layout
+    Then decipher output should be the same as cipher input
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+  @encryption @aes @custom-sub-block @ofb
+\end_layout
+
+\begin_layout Plain Layout
+  Scenario: Encryption with AES 128 OFB-8
+\end_layout
+
+\begin_layout Plain Layout
+    Given cipher argument -c AES -k 128 -m OFB-8
+\end_layout
+
+\begin_layout Plain Layout
+    When I run cipher with output sent through decipher
+\end_layout
+
+\begin_layout Plain Layout
+    Then decipher output should be the same as cipher input
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+  @encryption @aes @custom-sub-block @ofb
+\end_layout
+
+\begin_layout Plain Layout
+  Scenario: Encryption with AES 128 OFB-16
+\end_layout
+
+\begin_layout Plain Layout
+    Given cipher argument -c AES -k 128 -m OFB-16
+\end_layout
+
+\begin_layout Plain Layout
+    When I run cipher with output sent through decipher
+\end_layout
+
+\begin_layout Plain Layout
+    Then decipher output should be the same as cipher input
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+  @encryption @aes @custom-sub-block @ofb
+\end_layout
+
+\begin_layout Plain Layout
+  Scenario: Encryption with AES 128 OFB-64
+\end_layout
+
+\begin_layout Plain Layout
+    Given cipher argument -c AES -k 128 -m OFB-64
+\end_layout
+
+\begin_layout Plain Layout
+    When I run cipher with output sent through decipher
+\end_layout
+
+\begin_layout Plain Layout
+    Then decipher output should be the same as cipher input
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+  @encryption @bf
+\end_layout
+
+\begin_layout Plain Layout
+  Scenario: Encryption with BF 128 ECB
+\end_layout
+
+\begin_layout Plain Layout
+    Given cipher argument -c BF -k 128 -m ECB
+\end_layout
+
+\begin_layout Plain Layout
+    When I run cipher with output sent through decipher
+\end_layout
+
+\begin_layout Plain Layout
+    Then decipher output should be the same as cipher input
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+  @encryption @bf
+\end_layout
+
+\begin_layout Plain Layout
+  Scenario: Encryption with BF 192 ECB
+\end_layout
+
+\begin_layout Plain Layout
+    Given cipher argument -c BF -k 192 -m ECB
+\end_layout
+
+\begin_layout Plain Layout
+    When I run cipher with output sent through decipher
+\end_layout
+
+\begin_layout Plain Layout
+    Then decipher output should be the same as cipher input
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+  @encryption @bf
+\end_layout
+
+\begin_layout Plain Layout
+  Scenario: Encryption with BF 192 CFB
+\end_layout
+
+\begin_layout Plain Layout
+    Given cipher argument -c BF -k 192 -m CFB
+\end_layout
+
+\begin_layout Plain Layout
+    When I run cipher with output sent through decipher
+\end_layout
+
+\begin_layout Plain Layout
+    Then decipher output should be the same as cipher input
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+  @encryption @bf
+\end_layout
+
+\begin_layout Plain Layout
+  Scenario: Encryption with BF 192 OFB
+\end_layout
+
+\begin_layout Plain Layout
+    Given cipher argument -c BF -k 192 -m OFB
+\end_layout
+
+\begin_layout Plain Layout
+    When I run cipher with output sent through decipher
+\end_layout
+
+\begin_layout Plain Layout
+    Then decipher output should be the same as cipher input
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+  @encryption @bf
+\end_layout
+
+\begin_layout Plain Layout
+  Scenario: Encryption with BF 192 CBC
+\end_layout
+
+\begin_layout Plain Layout
+    Given cipher argument -c BF -k 192 -m CBC
+\end_layout
+
+\begin_layout Plain Layout
+    When I run cipher with output sent through decipher
+\end_layout
+
+\begin_layout Plain Layout
+    Then decipher output should be the same as cipher input
+\end_layout
+
+\begin_layout Plain Layout
+
+\end_layout
+
+\begin_layout Plain Layout
+25 scenarios (25 passed)
+\end_layout
+
+\begin_layout Plain Layout
+148 steps (148 passed)
+\end_layout
+
+\begin_layout Plain Layout
+1m40.415s
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_body
+\end_document

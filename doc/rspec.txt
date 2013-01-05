@@ -1,0 +1,101 @@
+
+BlockCrypter::BlockSlicer
+  should slice up input data into given size chunks
+
+CipherSelector
+  should provide list of available ciphers
+  should raise error if selected cipher does not exist
+  should provide ModeSelector for given cipher
+  should provide flat list of all ciphers, modes and key lengths supported
+  should privide block size
+  ModeSelector
+    should provide name of the cipher
+    should provide list of available modes
+    should raise error if selected mode does not exist
+    should provide KeyLengthSelector for given mode
+    should support selecting given mode
+    should support selecting preffered mode
+    #preferred_mode should select none mode when not available
+    sub block selection
+      should allow selecting sub block size from 8 to cipher block size in 8 bit increments
+      should raise error if sub block size is not supported
+      should raise error is sub block cannot be used with given mode
+  KeyLengthSelector
+    should provide name of the cipher
+    should provide name of the mode
+    should provide list of available key lengths
+    should raise error if selected key lentght does not exist
+    should provide CipherInfo for given key length
+    should support selecting given key length
+    should support selecting custom key length with supported cipher
+    should preferr selecting predefined key length with supported cipher if requested matches
+    should support selecting longest available key length
+    #longest_key should select longest predefined key length when custom key length is supported
+    #longest_key should select 256 key length for ciphers supporting only any key length
+    #longest_key should select given key length for ciphers supporting only any key length
+    should preferr selecting predefined mode for given sub block if available
+    should use ECB preset for sub block preset is not available
+    should allow using custom sub block processor over predefined preset when preffered
+
+Encrypter
+  should encrypt data stream with given cipher specs and key
+  should provide initialization vector used
+  should provide random initialization vector if not specified
+  should provide nil initialization vector if not needed
+  should work with custom key length
+  should encrypt with padding
+  should allow disabling of padding
+
+Decrypter
+  should decrypt data stream
+  should work with custom key length
+  should decrypt message without padding when padding is disabled
+  custom sub block mode
+    CFB
+      encrypter
+        should encrypt data stream with given cipher specs and key
+      encrypter
+        should decrypt data stream
+    OFB
+      encrypter
+        should encrypt data stream with given cipher specs and key
+      encrypter
+        should decrypt data stream
+
+Envelope::SDL
+  should generate message
+  should load streamed message
+
+Filter
+  should process input into output
+  should allow passing multiple output values for one input
+  should pass nil values
+  may not produce value for input
+  should output header before filtering
+  should not output nil header value
+  should output footer after filtering
+  should not output nil footer value
+  chaining
+    should allow chaining of filters
+    should call all header and footer handlers
+  nesting
+    should allow nesting many filters
+    should call all header and footer handlers
+
+IOEncrypter
+  should encrypt input stream to output stream
+  should use defferent session key for each run if not specified
+  should use defferent initialization vector for each run if not specified
+
+IODecrypter
+  should decrypt input stream to output stream
+
+SessionKey
+  should be of given length in bits
+  should be random
+  can be encrypted
+  can be encrypted (192)
+  can be created from encrypted key
+
+Finished in 0.37246 seconds
+68 examples, 0 failures
