@@ -6,6 +6,7 @@ require 'pathname'
 require 'Qt4'
 require_relative '../lib/cipher'
 require_relative '../qt/main.ui'
+require_relative '../qt/encryption_password.ui'
 
 $log = Logger.new(STDERR)
 
@@ -165,13 +166,67 @@ class Main < Qt::MainWindow
 		output_file = Qt::FileDialog.getSaveFileName(self, tr("Encrypted file name"), "") or return
 		output_file = Pathname.new(output_file)
 
+		encryption_password_dialog = EncryptionPassword.new
+		return if encryption_password_dialog.exec == Qt::Dialog::Rejected
+
 		input_file.open 'r' do |input|
 			output_file.open 'w' do |output|
-				IOEncrypter.new(input, output, cipher_info, 'test')
+				IOEncrypter.new(input, output, cipher_info, encryption_password_dialog.password)
 			end
 		end
 
-		Qt::MessageBox::about self, 'Success', "Encrypted file saved to #{output_file}"#, Qt::MessageBox::Ok
+		Qt::MessageBox::about self, 'Success', "Encrypted data saved to file #{output_file}"
+	end
+end
+
+class EncryptionPassword < Qt::Dialog
+	def initialize
+		super()
+
+		@u = Ui_EncryptionPassword.new
+		@u.setupUi(self)
+
+		show_password Qt::Unchecked
+	end
+
+	def accept
+		if @u.password.text.empty?
+			Qt::MessageBox::warning self, 'Password value', 'Please enter password', Qt::MessageBox::Ok
+			return
+		end
+
+		if @u.password_retype.text.empty?
+			Qt::MessageBox::warning self, 'Password value', 'Please retype password', Qt::MessageBox::Ok
+			return
+		end
+
+		if @u.password.text != @u.password_retype.text	
+			Qt::MessageBox::warning self, 'Password match', 'Passwords does not match', Qt::MessageBox::Ok
+			return
+		end
+		super
+	end
+
+	slots 'generate_password()'
+	def generate_password
+		password = Haddock::Password.generate
+		@u.password.setText password
+		@u.password_retype.setText password
+	end
+
+	slots 'show_password(int)'
+	def show_password(value)
+		if value == Qt::Unchecked
+			@u.password.setEchoMode Qt::LineEdit::Password
+			@u.password_retype.setEchoMode Qt::LineEdit::Password
+		else
+			@u.password.setEchoMode Qt::LineEdit::Normal
+			@u.password_retype.setEchoMode Qt::LineEdit::Normal
+		end
+	end
+
+	def password
+		@u.password.text
 	end
 end
 

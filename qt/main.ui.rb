@@ -1,7 +1,7 @@
 =begin
 ** Form generated from reading ui file 'main.ui'
 **
-** Created: pt. sty 4 23:48:53 2013
+** Created: sob. sty 5 00:38:38 2013
 **      by: Qt User Interface Compiler version 4.8.4
 **
 ** WARNING! All changes made in this file will be lost when recompiling ui file!
@@ -243,18 +243,18 @@ class Ui_MainWindow
     end
 
     def retranslateUi(mainWindow)
-    mainWindow.windowTitle = Qt::Application.translate("MainWindow", "MainWindow", nil, Qt::Application::UnicodeUTF8)
-    @groupBox_2.title = Qt::Application.translate("MainWindow", "Input File", nil, Qt::Application::UnicodeUTF8)
-    @encryption_input_file_button.text = Qt::Application.translate("MainWindow", "Input File...", nil, Qt::Application::UnicodeUTF8)
-    @groupBox.title = Qt::Application.translate("MainWindow", "Cipher Settings", nil, Qt::Application::UnicodeUTF8)
+    mainWindow.windowTitle = Qt::Application.translate("MainWindow", "Cipher Jakub Pastuszek", nil, Qt::Application::UnicodeUTF8)
+    @groupBox_2.title = Qt::Application.translate("MainWindow", "Input file", nil, Qt::Application::UnicodeUTF8)
+    @encryption_input_file_button.text = Qt::Application.translate("MainWindow", "Input file...", nil, Qt::Application::UnicodeUTF8)
+    @groupBox.title = Qt::Application.translate("MainWindow", "Cipher settings", nil, Qt::Application::UnicodeUTF8)
     @label.text = Qt::Application.translate("MainWindow", "Cipher", nil, Qt::Application::UnicodeUTF8)
     @label_2.text = Qt::Application.translate("MainWindow", "Mode", nil, Qt::Application::UnicodeUTF8)
-    @label_3.text = Qt::Application.translate("MainWindow", "Sub Bolck Size", nil, Qt::Application::UnicodeUTF8)
-    @label_4.text = Qt::Application.translate("MainWindow", "Key Size", nil, Qt::Application::UnicodeUTF8)
+    @label_3.text = Qt::Application.translate("MainWindow", "Sub bolck size", nil, Qt::Application::UnicodeUTF8)
+    @label_4.text = Qt::Application.translate("MainWindow", "Key size", nil, Qt::Application::UnicodeUTF8)
     @encrypt_button.text = Qt::Application.translate("MainWindow", "Encrypt...", nil, Qt::Application::UnicodeUTF8)
     @tabWidget.setTabText(@tabWidget.indexOf(@encryptionTab), Qt::Application.translate("MainWindow", "Encryption", nil, Qt::Application::UnicodeUTF8))
-    @groupBox_3.title = Qt::Application.translate("MainWindow", "Input File", nil, Qt::Application::UnicodeUTF8)
-    @decryption_input_file_button.text = Qt::Application.translate("MainWindow", "Input File...", nil, Qt::Application::UnicodeUTF8)
+    @groupBox_3.title = Qt::Application.translate("MainWindow", "Input file", nil, Qt::Application::UnicodeUTF8)
+    @decryption_input_file_button.text = Qt::Application.translate("MainWindow", "Input file...", nil, Qt::Application::UnicodeUTF8)
     @decryption_button.text = Qt::Application.translate("MainWindow", "Decrypt...", nil, Qt::Application::UnicodeUTF8)
     @tabWidget.setTabText(@tabWidget.indexOf(@decryptionTab), Qt::Application.translate("MainWindow", "Decryption", nil, Qt::Application::UnicodeUTF8))
     end # retranslateUi

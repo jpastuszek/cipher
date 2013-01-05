@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>MainWindow</string>
+   <string>Cipher Jakub Pastuszek</string>
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QHBoxLayout" name="horizontalLayout_9">
@@ -33,7 +33,7 @@
           <item>
            <widget class="QGroupBox" name="groupBox_2">
             <property name="title">
-             <string>Input File</string>
+             <string>Input file</string>
             </property>
             <layout class="QHBoxLayout" name="horizontalLayout_3">
              <item>
@@ -46,7 +46,7 @@
              <item>
               <widget class="QPushButton" name="encryption_input_file_button">
                <property name="text">
-                <string>Input File...</string>
+                <string>Input file...</string>
                </property>
               </widget>
              </item>
@@ -58,7 +58,7 @@
         <item>
          <widget class="QGroupBox" name="groupBox">
           <property name="title">
-           <string>Cipher Settings</string>
+           <string>Cipher settings</string>
           </property>
           <layout class="QHBoxLayout" name="horizontalLayout_2">
            <item>
@@ -84,7 +84,7 @@
            <item>
             <widget class="QLabel" name="label_3">
              <property name="text">
-              <string>Sub Bolck Size</string>
+              <string>Sub bolck size</string>
              </property>
             </widget>
            </item>
@@ -107,7 +107,7 @@
            <item>
             <widget class="QLabel" name="label_4">
              <property name="text">
-              <string>Key Size</string>
+              <string>Key size</string>
              </property>
             </widget>
            </item>
@@ -189,7 +189,7 @@
           <item>
            <widget class="QGroupBox" name="groupBox_3">
             <property name="title">
-             <string>Input File</string>
+             <string>Input file</string>
             </property>
             <layout class="QHBoxLayout" name="horizontalLayout_4">
              <item>
@@ -202,7 +202,7 @@
              <item>
               <widget class="QPushButton" name="decryption_input_file_button">
                <property name="text">
-                <string>Input File...</string>
+                <string>Input file...</string>
                </property>
               </widget>
              </item>
