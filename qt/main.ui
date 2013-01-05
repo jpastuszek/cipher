@@ -164,7 +164,7 @@
           <item>
            <widget class="QProgressBar" name="encryption_progress_bar">
             <property name="value">
-             <number>24</number>
+             <number>0</number>
             </property>
            </widget>
           </item>
@@ -229,7 +229,7 @@
           <item>
            <widget class="QProgressBar" name="decryption_progress_bar">
             <property name="value">
-             <number>24</number>
+             <number>0</number>
             </property>
            </widget>
           </item>

@@ -1,7 +1,7 @@
 =begin
 ** Form generated from reading ui file 'main.ui'
 **
-** Created: sob. sty 5 01:36:17 2013
+** Created: sob. sty 5 02:28:11 2013
 **      by: Qt User Interface Compiler version 4.8.4
 **
 ** WARNING! All changes made in this file will be lost when recompiling ui file!
@@ -155,7 +155,7 @@ class Ui_MainWindow
     @horizontalLayout_8.objectName = "horizontalLayout_8"
     @encryption_progress_bar = Qt::ProgressBar.new(@encryptionTab)
     @encryption_progress_bar.objectName = "encryption_progress_bar"
-    @encryption_progress_bar.value = 24
+    @encryption_progress_bar.value = 0
 
     @horizontalLayout_8.addWidget(@encryption_progress_bar)
 
@@ -203,7 +203,7 @@ class Ui_MainWindow
     @horizontalLayout_6.objectName = "horizontalLayout_6"
     @decryption_progress_bar = Qt::ProgressBar.new(@decryptionTab)
     @decryption_progress_bar.objectName = "decryption_progress_bar"
-    @decryption_progress_bar.value = 24
+    @decryption_progress_bar.value = 0
 
     @horizontalLayout_6.addWidget(@decryption_progress_bar)
 

@@ -11,6 +11,42 @@ require_relative '../qt/decryption_password.ui'
 
 $log = Logger.new(STDERR)
 
+module FileReadStats
+	def read(bytes)
+		out = super(bytes)
+		@bytes_read ||= 0
+		@bytes_read += bytes
+
+		if @on_bytes_read
+			notification = @bytes_read / @on_bytes_read_bytes
+		   	if @on_bytes_read_notifications < notification
+				@on_bytes_read_notifications = notification
+				@on_bytes_read.call(@bytes_read)
+			end
+		end
+		out
+	end
+
+	def on_bytes_read(bytes, &block)
+		@on_bytes_read = block
+		@on_bytes_read_bytes = bytes
+		@on_bytes_read_notifications = 0
+	end
+
+	def on_bytes_read_progress(bytes, &block)
+		input_length = size
+		on_bytes_read(bytes) do |bytes|
+			percent =  bytes.to_f / input_length
+			percent = 1.0 if percent > 1.0
+			block.call percent
+		end
+	end
+
+	def bytes_read
+		@bytes_read
+	end
+end
+
 module ValuesSpinSelector
 	def valid_values=(arr)
 		@valid_values = arr
@@ -173,12 +209,19 @@ class Main < Qt::MainWindow
 		return if encryption_password_dialog.exec == Qt::Dialog::Rejected
 
 		input_file.open 'r' do |input|
+			input.extend FileReadStats
+			input.on_bytes_read_progress(1024 * 8) do |progress|
+				@u.encryption_progress_bar.setValue (progress * 100).to_i
+				Qt::CoreApplication::processEvents
+			end
+
 			output_file.open 'w' do |output|
 				IOEncrypter.new(input, output, cipher_info, encryption_password_dialog.password)
 			end
 		end
 
 		Qt::MessageBox::about self, 'Success', "Encrypted data saved to file #{output_file}"
+		@u.encryption_progress_bar.setValue 0
 	end
 
 	## Decryption
@@ -205,6 +248,12 @@ class Main < Qt::MainWindow
 
 		begin
 			input_file.open 'r' do |input|
+				input.extend FileReadStats
+				input.on_bytes_read_progress(1024 * 8) do |progress|
+					@u.decryption_progress_bar.setValue (progress * 100).to_i
+					Qt::CoreApplication::processEvents
+				end
+
 				output_file.open 'w' do |output|
 					IODecrypter.new(input, output, decryption_password_dialog.password)
 				end
@@ -214,6 +263,7 @@ class Main < Qt::MainWindow
 		rescue OpenSSL::Cipher::CipherError
 			Qt::MessageBox::critical self, 'Failure', "Decryption failed! Check our password."
 		end
+		@u.decryption_progress_bar.setValue 0
 	end
 end
 
