@@ -24,7 +24,7 @@ class Crypter < Filter
 		yield @cipher
  
 		if @cipher_selector.need_key_size?
-			@log.info "Using key length: #{@cipher_selector.key_size}"
+			@log.info "Using key size: #{@cipher_selector.key_size}"
 			@cipher.key_len = @cipher_selector.key_size / 8
 		end
 

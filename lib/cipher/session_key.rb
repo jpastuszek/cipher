@@ -10,7 +10,7 @@ class SessionKey < String
 		session_key = ''
 
 		# setting iv since ECB may not be available for all ciphers
-		Decrypter.new(key_cipher_selector, password_digest, initialization_vector: password_digest)
+		Decrypter.new(key_cipher_selector, password_digest, initialization_vector: password_digest, padding: false)
 		.output do |out|
 			session_key << out
 		end
@@ -18,7 +18,7 @@ class SessionKey < String
 			sink << encrypted_session_key
 		end
 
-		return session_key
+		return session_key.byteslice(0, cipher_selector.key_size / 8)
 	end
 
 	def encrypt(cipher_selector, password)
@@ -27,13 +27,15 @@ class SessionKey < String
 
 		session_key = ''
 
+		padding = (self.length % (cipher_selector.block_size / 8))
+
 		# setting iv since ECB may not be available for all ciphers
-		Encrypter.new(key_cipher_selector, password_digest, initialization_vector: password_digest)
+		Encrypter.new(key_cipher_selector, password_digest, initialization_vector: password_digest, padding: false)
 		.output do |encrypted_session_key|
 			session_key << encrypted_session_key
 		end
 		.input do |sink|
-			sink << self
+			sink << self + OpenSSL::Random.random_bytes(padding)
 		end
 
 		return session_key
